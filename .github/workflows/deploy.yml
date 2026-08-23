@@ -24,10 +24,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      # 只把站点相关文件发布到 Pages，不含 Python 源码 / .github / .env-example
+      - name: Stage site files
+        run: |
+          mkdir -p _site
+          cp index.html .nojekyll _site/
+          cp _sidebar.md _site/
+          cp README.md _site/
+          # 所有顶层 .md 正文与附录
+          cp *.md _site/
+          # 图片目录（如有）
+          [ -d images ] && cp -r images _site/ || true
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

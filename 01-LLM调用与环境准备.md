@@ -1,6 +1,6 @@
 # 01 - LLM 调用与环境准备
 
-> 📌 **第 1 章 · 阶段一 Prompt 层** · [← 返回目录大纲](教程目录大纲.md) · [上一章 无](README.md) · [下一章 02 消息状态与上下文窗口 →](02-消息状态与上下文窗口.md)
+> 📌 **第 1 章 · 阶段一 Prompt 层** · [← 返回目录大纲](教程目录大纲.md) · [上一章 无](README.md) · 下一章 02 消息状态与上下文窗口（规划中）
 
 ---
 
@@ -41,6 +41,27 @@
 读完你会彻底看懂：那些成熟框架，到底替你做了什么、什么时候该自己写、什么时候该用框架。
 
 > 💡 **一句话记住本教程的主线**：不是「学怎么用 LangChain」，而是「从零手写一个 mini LangGraph，从而看懂所有框架」。
+
+### 1.1 我们最终要造的 Runtime 长什么样
+
+不用等到第 13 章才看见全貌。下面这张图就是我们要从零搓出来的 Agent Runtime 分层，每加一章就在图上盖一层。**当前我们在最底层 `LLMClient`：**
+
+```text
+┌─────────────────────────────────────────┐
+│                 Guard                   │  第 15 章：终止 / 权限 / 安全
+├─────────────────────────────────────────┤
+│                 Trace                   │  第 14 章：日志 / 回放
+├──────────────┬──────────────┬───────────┤
+│    Loop      │    Tools     │   State   │  第 05 / 06 / 12 章
+├──────────────┴──────────────┴───────────┤
+│              Context                    │  第 02 / 08 / 09 章
+├─────────────────────────────────────────┤
+│              LLMClient  ← 你在这里        │  第 01 章
+└─────────────────────────────────────────┘
+```
+
+- 自下而上：先让模型动起来（第 01 章），再管上下文（第 02 章），再装工具手脚（第 04–07 章），再加状态可恢复（第 12 章），再套观测与护栏（第 14–15 章）。
+- **模型越强，上层那几层（Guard / Trace / State）越值钱**——这正是为什么重心从 Prompt 迁到了 harness / runtime。你亲手实现过它们，再用任何框架都得心应手。
 
 ---
 
@@ -93,8 +114,8 @@ print(resp.choices[0].message.content)
 
 ### 3.1 Python 版本
 
-- **推荐**：Python **3.10**（支持 3.10–3.13，不建议 3.14）
-- 本教程 `requirements.txt` 已写好依赖。
+- **推荐**：Python **3.10**（支持 3.10–3.13）。不建议 3.14——部分二进制依赖（如 numpy 预编译轮子）在 3.14 刚发布时往往还没跟上，装包容易失败，等生态稳定再升。
+- 本教程 `requirements.txt` 已写好依赖（第 01–07 章够用）。后续章节需要向量库/部署时，再装 `requirements-full.txt`。
 
 ### 3.2 创建虚拟环境并装依赖
 
@@ -129,7 +150,7 @@ DEEPSEEK_MODEL=deepseek-chat
 正确写法：
 
 ```bash
-python 案例与源码-1-Prompt层/01-HelloLLM.py
+python examples/01_hello_llm.py
 ```
 
 ---
@@ -194,32 +215,53 @@ for chunk in stream:
 
 所以我们要把「调用三件套 + 环境变量」封装成一个最小的 `LLMClient`。**这就是我们手写 Harness 的第一块砖。**
 
+> 这 30 行代码，对应框架里的什么？——先看清这一层，后面每加一层你都会知道「框架替我做了哪 10 行」。
+
+| 本教程 | 框架里对应的东西 |
+| --- | --- |
+| `LLMClient` | LangChain 的 `ChatOpenAI` / OpenAI Agents SDK 的 `model=` |
+| `chat(messages)` / `stream(messages)` | `invoke` / `stream`，框架的薄封装 |
+| `.env` 里 `LLM_PROVIDER` 切模型 | 框架里的 provider 配置层 |
+| 返回 `LLMResult`（自己的结构） | 框架返回的 `AIMessage` / `Response` |
+
+所以「不用框架」不是否定框架，而是让你看见：框架那一层抽象，拆开就是这么几行。你亲手写过，再读 LangChain 源码就不会发懵。
+
 ### 5.1 设计要点
 
 一个合格的 LLM 客户端封装，至少要解决三件事：
 
 1. **配置集中**：从 `.env` 读 `LLM_PROVIDER`，自动选对应的 Key/URL/模型。换模型只改 `.env`，不改代码。
-2. **统一接口**：对外只暴露 `chat(messages, stream=False)`，内部处理同步/流式差异。
-3. **可扩展**：后面要加 token 计数、重试、trace——都得能挂进来。
+2. **统一接口**：对外暴露 `chat()`（同步，返回 `LLMResult`）和 `stream()`（流式，逐块 yield 文本）。**这两个签名从本章起冻住**，后续章节只加能力不改签名。
+3. **返回自己的结构**：对外返回 `LLMResult`（含 `content` / `tool_calls` / `usage`），不把 OpenAI SDK 对象漏进上层——否则第 05 章的 ReAct 循环会被 SDK 细节污染。
 
 ### 5.2 实现
 
-完整代码见 [llm_client.py](案例与源码-1-Prompt层/llm_client.py)（可本地运行，运行方式见[第 6 节](#6、运行本章案例)）。核心长这样：
+完整代码见 [harness/llm.py](harness/llm.py)（可本地运行，运行方式见[第 6 节](#6、运行本章案例)）。核心长这样：
 
 ```python
 from openai import OpenAI
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
+from dataclasses import dataclass, field
 import os
 
-load_dotenv()
+# 找到仓库根目录的 .env（案例可在任意子目录运行）
+load_dotenv(find_dotenv(usecwd=True))
 
-# 提供商 → 配置的映射，换模型只改 .env
+# 提供商 → (API Key 变量, Base URL 变量, 模型名 变量)
 PROVIDERS = {
-    "deepseek": ("DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", "DEEPSEEK_MODEL"),
-    "qwen":     ("DASHSCOPE_API_KEY", "QWEN_BASE_URL", "QWEN_MODEL"),
-    "openai":   ("OPENAI_API_KEY", "OPENAI_BASE_URL", "OPENAI_MODEL"),
-    "ollama":   ("OLLAMA_API_KEY", "OLLAMA_BASE_URL", "OLLAMA_MODEL"),
+    "deepseek": ("DEEPSEEK_API_KEY",  "DEEPSEEK_BASE_URL", "DEEPSEEK_MODEL"),
+    "qwen":     ("DASHSCOPE_API_KEY", "QWEN_BASE_URL",    "QWEN_MODEL"),
+    "openai":   ("OPENAI_API_KEY",    "OPENAI_BASE_URL",   "OPENAI_MODEL"),
+    "ollama":   ("OLLAMA_API_KEY",    "OLLAMA_BASE_URL",   "OLLAMA_MODEL"),
 }
+
+@dataclass
+class LLMResult:
+    """统一返回结构：把 SDK 细节收在内核里，上层只认这个。"""
+    content: str = ""
+    tool_calls: list = field(default_factory=list)   # 第 05 章起用
+    usage: dict = field(default_factory=dict)         # token 用量
+    raw: object = None                                # 原始响应，调试用
 
 class LLMClient:
     def __init__(self, provider=None):
@@ -227,28 +269,46 @@ class LLMClient:
         key_env, url_env, model_env = PROVIDERS[provider]
         self.model = os.getenv(model_env)
         self.client = OpenAI(
-            api_key=os.getenv(key_env) or "ollama",  # ollama 不需要 key
+            api_key=os.getenv(key_env) or "ollama",   # ollama 不需要 key
             base_url=os.getenv(url_env),
         )
 
-    def chat(self, messages, stream=False, **kwargs):
-        """统一调用入口。messages 是 [{role, content}, ...] 列表。"""
-        return self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            stream=stream,
-            **kwargs,
+    def chat(self, messages, **kwargs) -> LLMResult:
+        """同步调用，返回 LLMResult。签名从第 01 章起冻住。"""
+        resp = self.client.chat.completions.create(
+            model=self.model, messages=messages, stream=False, **kwargs,
         )
+        msg = resp.choices[0].message
+        usage = {}
+        if getattr(resp, "usage", None):
+            usage = {"total_tokens": resp.usage.total_tokens}
+        return LLMResult(content=msg.content or "", usage=usage, raw=resp)
+
+    def stream(self, messages, **kwargs):
+        """流式调用，逐块 yield 文本。首块 None 已处理。"""
+        s = self.client.chat.completions.create(
+            model=self.model, messages=messages, stream=True, **kwargs,
+        )
+        for chunk in s:
+            delta = chunk.choices[0].delta.content or ""
+            if delta:
+                yield delta
 ```
+
+> 留意两点设计：① `chat()` 返回 `LLMResult` 而不是 SDK 对象，上层不碰 OpenAI 细节；② `stream()` 单独成方法、逐块 yield `str`，而不是在 `chat()` 里塞个 `stream` 参数返回两种不同的东西。这两点是为了后面 ReAct 循环能干净地复用。
 
 ### 5.3 用起来
 
 ```python
-from llm_client import LLMClient
+from harness import LLMClient
 
 llm = LLMClient()  # 自动读 .env 里的 LLM_PROVIDER
-resp = llm.chat([{"role": "user", "content": "你好"}])
-print(resp.choices[0].message.content)
+result = llm.chat([{"role": "user", "content": "你好"}])
+print(result.content)          # 模型回复文本
+print(result.usage)            # token 用量
+# 流式
+for delta in llm.stream([{"role": "user", "content": "你好"}]):
+    print(delta, end="", flush=True)
 ```
 
 换通义千问？把 `.env` 里 `LLM_PROVIDER=qwen`，代码一行不改。
@@ -259,35 +319,33 @@ print(resp.choices[0].message.content)
 
 ## 6、运行本章案例
 
-确保你已完成[第 3 节环境准备](#3、环境准备)（装好依赖、填好 `.env`），然后在项目根目录运行：
+确保你已完成[第 3 节环境准备](#3、环境准备)（装好依赖、填好 `.env`），然后在仓库任意目录运行：
 
 ```bash
-# 必须在项目根目录
-python 案例与源码-1-Prompt层/01-HelloLLM.py
+python examples/01_hello_llm.py
 ```
 
-预期输出（依次跑三个 demo）：
+> 代码用 `find_dotenv()` 自动向上查找 `.env`，所以在仓库任意子目录运行都能读到配置，不必非在根目录。
+
+预期输出（两个 demo：同步 + 流式）：
 
 ```
-✅ 环境自检通过：provider=deepseek, key_env=DEEPSEEK_API_KEY
+✅ 环境自检通过：provider=deepseek
+   model=deepseek-chat
 ==================================================
 ① 同步调用
 ==================================================
 Agent Harness 是包裹 LLM 的运行时脚手架……（模型完整回答）
+(token 用量: {'prompt_tokens': ..., 'completion_tokens': ..., 'total_tokens': ...})
 ==================================================
 ② 流式调用
 ==================================================
 A-g-e-n-t- -H-a-r-n-e-s-s-…（逐字打印）
-==================================================
-③ 多轮对话（消息历史累积）
-==================================================
-用户：我叫小明
-模型：你好小明！
-用户：我叫什么名字？
-模型：你叫小明呀。
+
+💡 多轮对话与消息历史累积 → 见第 02 章
 ```
 
-> 💡 如果第三轮模型没记住名字，多半是 `.env` 没读到或上下文没累积——检查是否在根目录运行、是否激活了虚拟环境。
+> 💡 多轮对话为什么不在本章演示？因为「攒消息历史」会牵出 Token 计数、上下文窗口、KV Cache 一连串问题，那是第 02 章的核心。本章只把「单次调用」打透。
 
 ---
 

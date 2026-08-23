@@ -10,6 +10,9 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat)
 ![Status](https://img.shields.io/badge/status-持续更新中-orange?style=flat)
+![Chapters](https://img.shields.io/badge/已发布-01-09f?style=flat)
+
+> 📌 **当前进度**：已发布 `01`（LLM 调用与环境准备）；`02–18` 规划中，侧边栏已标注。点开侧边栏不会再 404。
 
 [快速开始](#-快速开始) • [教程大纲](教程目录大纲.md) • [面试题库](面试题库.md) • [常见问题](新手入门与常见问题.md) • [更新日志](教程更新日志.md)
 
@@ -70,12 +73,12 @@
 
 ## 📚 教程大纲（节选）
 
-完整导航见 **[教程目录大纲](教程目录大纲.md)**。
+完整导航见 **[教程目录大纲](教程目录大纲.md)**。下面是规划全貌，标注「✅ 已发布」的章节可直接点开看。
 
 ### 🟢 阶段一：Prompt 层 —— 让模型动起来
-- 01 LLM 调用与环境准备
-- 02 消息状态与上下文窗口
-- 03 Prompt 与结构化输出
+- 01 LLM 调用与环境准备 ✅ 已发布
+- 02 消息状态与上下文窗口（规划中）
+- 03 Prompt 与结构化输出（规划中）
 
 ### 🔵 阶段二：Tool 层 —— 给 Agent 装手脚
 - 04 Function Calling 原理
@@ -135,10 +138,10 @@
 4. **跑通第一个案例**
 
    ```bash
-   python 案例与源码-1-Prompt层/01-HelloLLM.py
+   python examples/01_hello_llm.py
    ```
 
-   > ⚠️ 必须在**项目根目录**执行 `python`，否则读不到 `.env`。遇到 `ModuleNotFoundError`、API Key 报错等，见[新手入门与常见问题](新手入门与常见问题.md)。
+   > 代码用 `find_dotenv()` 自动向上查找 `.env`，所以在仓库任意子目录运行都能读到配置。遇到报错见[新手入门与常见问题](新手入门与常见问题.md)。
 
 ---
 
@@ -146,7 +149,8 @@
 
 - **目标**：做一套**真正讲清原理、全程可跑**的 Agent Harness 实战教程。不只告诉你「学什么」，更告诉你「框架替你做了什么、自己怎么从零实现」。
 - **技术定位**：聚焦 **Python + 手写 Agent Runtime** 路线，**不走 LangChain/LangGraph 速成、也不走 Java/Spring AI**。读完这套，再用任何框架都得心应手。
-- **内容构成**：18 章系统正文 + 每章可运行源码 + 面试题库 + 术语表 + 实战项目。
+- **内容构成**：18 章系统正文（持续更新，见顶部进度）+ 每章可运行源码 + 面试题库 + 术语表 + 实战项目。
+- **代码结构**：内核在 `harness/`（随章节生长），案例在 `examples/`，正文用中文文件名。内核只加能力、不改已公开接口。
 - **更新承诺**：Agent 技术栈在快速演进，本仓库会跟随 context / harness / runtime / protocol 这条主线持续更新。若有帮助，欢迎 **Star** ⭐。
 
 ---

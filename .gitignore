@@ -37,3 +37,6 @@ data/local/
 dist/
 build/
 *.egg-info/
+
+# 内部文档（不发布）
+修改建议.md

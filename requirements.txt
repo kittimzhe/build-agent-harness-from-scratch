@@ -1,22 +1,12 @@
-# 核心依赖：OpenAI 兼容 SDK（DeepSeek/通义/OpenAI/Ollama 通用）
+# 核心依赖（第 01–07 章够用）
+# 装这一个文件即可跑通第 01 章及前几章案例。
+# 阶段三起的能力（向量库 / 文档加载 / 部署）见 requirements-full.txt
+
+# OpenAI 兼容 SDK（DeepSeek/通义/OpenAI/Ollama 通用）
 openai>=1.50.0
 
-# 环境变量加载
+# 环境变量加载（find_dotenv 支持在子目录运行）
 python-dotenv>=1.0.0
 
 # 结构化输出与数据校验
 pydantic>=2.7.0
-
-# 阶段三起：向量与数值计算（手写最简向量库）
-numpy>=1.26.0
-
-# 阶段三起：文档加载与切分
-pypdf>=4.0.0
-markdown>=3.5
-
-# 阶段六：部署
-fastapi>=0.110.0
-uvicorn[standard]>=0.29.0
-
-# 可观测（第 14 章可选）
-# langfuse>=2.0.0

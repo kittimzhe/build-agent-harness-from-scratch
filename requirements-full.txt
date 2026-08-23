@@ -1,0 +1,19 @@
+# 完整依赖（含后续章节能力）
+# 先 pip install -r requirements.txt 跑通第 01 章
+# 需要后续章节能力时再：pip install -r requirements-full.txt
+
+-r requirements.txt
+
+# 阶段三起：向量与数值计算（手写最简向量库）
+numpy>=1.26.0
+
+# 阶段三起：文档加载与切分
+pypdf>=4.0.0
+markdown>=3.5
+
+# 阶段六：部署
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+
+# 可观测（第 14 章可选）
+# langfuse>=2.0.0
