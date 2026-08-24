@@ -10,9 +10,9 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat)
 ![Status](https://img.shields.io/badge/status-持续更新中-orange?style=flat)
-![Chapters](https://img.shields.io/badge/已发布-01-09f?style=flat)
+![Chapters](https://img.shields.io/badge/已发布-01--02-09f?style=flat)
 
-> 📌 **当前进度**：已发布 `01`（LLM 调用与环境准备）；`02–18` 规划中，侧边栏已标注。点开侧边栏不会再 404。
+> 📌 **当前进度**：已发布 `01`（LLM 调用与环境准备）、`02`（消息状态与上下文窗口）；`03–18` 规划中，侧边栏已标注。点开侧边栏不会再 404。
 
 [快速开始](#-快速开始) • [教程大纲](教程目录大纲.md) • [面试题库](面试题库.md) • [常见问题](新手入门与常见问题.md) • [更新日志](教程更新日志.md)
 
@@ -77,7 +77,7 @@
 
 ### 🟢 阶段一：Prompt 层 —— 让模型动起来
 - 01 LLM 调用与环境准备 ✅ 已发布
-- 02 消息状态与上下文窗口（规划中）
+- 02 消息状态与上下文窗口 ✅ 已发布
 - 03 Prompt 与结构化输出（规划中）
 
 ### 🔵 阶段二：Tool 层 —— 给 Agent 装手脚
