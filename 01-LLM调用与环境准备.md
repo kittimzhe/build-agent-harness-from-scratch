@@ -143,15 +143,15 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-chat
 ```
 
-### 3.4 运行约定（很重要）
+### 3.4 运行约定
 
-> ⚠️ **必须在项目根目录运行案例**，否则读不到根目录的 `.env`，会出现 API Key 为空、401、403 等报错。
-
-正确写法：
+代码用 `find_dotenv(usecwd=True)` 自动向上查找 `.env`，所以**在仓库任意子目录运行都能读到配置**，不必非在根目录：
 
 ```bash
 python examples/01_hello_llm.py
 ```
+
+> 唯一要求：`.env` 放在仓库根目录（和 `.env-example` 同级）。找不到时会 401，先回头确认 `.env` 在不在。
 
 ---
 
@@ -354,10 +354,10 @@ A-g-e-n-t- -H-a-r-n-e-s-s-…（逐字打印）
 | 报错 | 原因 | 解决 |
 | --- | --- | --- |
 | `ModuleNotFoundError: No module named 'openai'` | 虚拟环境没激活或没装依赖 | `source .venv/bin/activate && pip install -r requirements.txt` |
-| `AuthenticationError` / 401 / 403 | API Key 为空或错误 | 确认 `.env` 填了 Key，且在**根目录**运行（能读到 `.env`） |
+| `AuthenticationError` / 401 / 403 | API Key 为空、填错，或 `LLM_PROVIDER` 和 Key 不匹配 | 确认 `.env` 在仓库根目录、Key 与 provider 匹配（如 `LLM_PROVIDER=deepseek` 对应 `DEEPSEEK_API_KEY`） |
 | `NotFoundError` / 404 | Base URL 写错（比如通义忘了 `/v1`） | 对照 [2.1 各平台三个值](#21-各平台的三个值对照) 检查 |
 | 连接超时 | 国内访问 OpenAI 需代理 | 改用 DeepSeek / 通义千问 |
-| `delta.content` 报 `None` | 流式首块没有 content | 用 `delta.content or ""` 兜底 |
+| `delta.content` 报 `None`（裸调 SDK 时） | 流式首块没有 content | 第 4.2 节裸调要 `or ""`；用 `LLMClient.stream()` 已兜底，不用管 |
 
 更多见 [新手入门与常见问题](新手入门与常见问题.md)。
 
@@ -370,4 +370,4 @@ A-g-e-n-t- -H-a-r-n-e-s-s-…（逐字打印）
 - 说出调用三件套，理解为什么兼容 OpenAI 协议的模型都长一个样
 - 把裸调用封装成可复用的 `LLMClient`（Harness 第一块砖）
 
-➡️ 下一章 [02 消息状态与上下文窗口](02-消息状态与上下文窗口.md)，我们会在 `LLMClient` 上加第二块砖：**多轮对话与消息历史**。你会理解 Token 计数、上下文窗口、KV Cache，以及为什么「上下文不是静态输入，而是动态演化的状态」——这是从 Prompt 走向 Context Engineering 的起点。
+➡️ 下一章 **02 消息状态与上下文窗口**（规划中），我们会在 `LLMClient` 上加第二块砖：**多轮对话与消息历史**。你会理解 Token 计数、上下文窗口、KV Cache，以及为什么「上下文不是静态输入，而是动态演化的状态」——这是从 Prompt 走向 Context Engineering 的起点。可回[教程目录大纲](教程目录大纲.md)看全局。

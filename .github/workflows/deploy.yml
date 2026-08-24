@@ -31,8 +31,11 @@ jobs:
           cp index.html .nojekyll _site/
           cp _sidebar.md _site/
           cp README.md _site/
-          # 所有顶层 .md 正文与附录
-          cp *.md _site/
+          # 所有顶层 .md 正文与附录（显式排除内部文档 修改建议.md）
+          for f in *.md; do
+            [ "$f" = "修改建议.md" ] && continue
+            cp "$f" _site/
+          done
           # 图片目录（如有）
           [ -d images ] && cp -r images _site/ || true
       - name: Upload artifact

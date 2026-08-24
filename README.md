@@ -49,9 +49,9 @@
 
 ## 🎯 你学完能收获什么
 
-- **能从零跑通一个 Agent**：从第一次 LLM 调用，到 ReAct 循环、RAG、多步规划、多 Agent 协作，全程不依赖 LangChain/LangGraph。
+- **能从零跑通一个 Agent**：从第一次 LLM 调用，到工具循环、上下文治理、状态恢复、可观测、协议接入，全程不依赖 LangChain/LangGraph。
 - **看懂任何框架**：亲手实现过 Harness，再用 LangChain / LangGraph / OpenAI Agents SDK 时，你会知道每一行背后在发生什么。
-- **能讲清楚架构取舍**：ReAct vs Plan-and-Execute、单 Agent vs 多 Agent、Prompt vs Context、何时用 RAG 何时用 Memory —— 都能讲出工程理由，面试经得起追问。
+- **能讲清楚架构取舍**：循环怎么终止、上下文怎么压缩、工具失败怎么重试、何时用文件记忆何时用向量 —— 都能讲出工程理由，面试经得起追问。
 - **对齐 2026 Agent 岗位**：配套[面试题库](面试题库.md)按 Agent Runtime、Context Engineering、MCP/A2A、Eval、Trace 等能力域组织，覆盖大厂高频追问。
 
 ---
@@ -62,9 +62,9 @@
 | --- | --- | --- |
 | **主语言** | Python 3.10+ | 全程 Python，不涉及 Java/Spring AI |
 | **模型 SDK** | OpenAI 兼容 SDK | 默认 DeepSeek / 通义千问，可换 Ollama 本地模型（无需 Key） |
-| **Agent 核心** | **自己手写** | ReAct、Tool Loop、State、Checkpoint、Trace 全部从零实现 |
+| **Agent 核心** | **自己手写** | Tool Loop、Context 治理、State、Checkpoint、Trace 全部从零实现 |
 | **协议** | MCP / A2A / Skills | 第 16 章接入，理解协议层为何成基础设施 |
-| **向量检索** | 纯 Python + numpy | 手写最简向量库，再讲何时该上 Qdrant/Redis |
+| **记忆体系** | 文件/会话记忆 vs 向量记忆 | 主线讲取舍；手写最简向量库作教具/附录，再讲何时该上 Qdrant/Redis |
 | **可观测** | 自打 Trace + Langfuse | 第 14 章从零做观测 |
 | **部署** | FastAPI + Docker | 第 18 章从 demo 到可交付 |
 | **评测** | 自建回归集 + RAGAS | 附录讲 Agent Eval 框架 |
@@ -82,17 +82,17 @@
 
 ### 🔵 阶段二：Tool 层 —— 给 Agent 装手脚
 - 04 Function Calling 原理
-- 05 手写第一个 ReAct 循环
-- 06 工具集合与容错
+- 05 手写第一个工具循环（ReAct 当教具）
+- 06 工具集合与容错（重试 / 超时 / 幂等）
 - 07 结构化输出与 Schema 设计
 
 ### 🟣 阶段三：Context 层 —— 管好模型的「工作内存」
 - 08 Context 治理：压缩、取舍、按需读取
-- 09 记忆体系：短期 / 长期 / 向量记忆
+- 09 记忆体系：文件 / 会话记忆 vs 向量记忆
 
 ### 🟠 阶段四：State 层 —— 让长任务可恢复
 - 10 任务拆解与 Planning
-- 11 反思与自纠
+- 11 失败策略与反思
 - 12 Checkpoint 与状态恢复
 
 ### 🔴 阶段五：Runtime 层 —— 封装你的 Harness
