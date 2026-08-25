@@ -114,7 +114,7 @@ class LLMClient:
 
     @staticmethod
     def _to_result(resp) -> LLMResult:
-        """把 SDK 响应收成 LLMResult。"""
+        """把 SDK 响应收成 LLMResult（tool_calls 收成纯 dict，不漏 SDK 对象）。"""
         msg = resp.choices[0].message
         usage = {}
         if getattr(resp, "usage", None):
@@ -123,9 +123,22 @@ class LLMClient:
                 "completion_tokens": resp.usage.completion_tokens,
                 "total_tokens": resp.usage.total_tokens,
             }
+        # SDK 的 tool_calls 是对象列表（第 05 章起用），
+        # 这里收成纯 dict：上层（AgentLoop）可直接 append 回 messages，无需 import SDK。
+        tool_calls = [
+            {
+                "id": tc.id,
+                "type": "function",
+                "function": {
+                    "name": tc.function.name,
+                    "arguments": tc.function.arguments,
+                },
+            }
+            for tc in (getattr(msg, "tool_calls", None) or [])
+        ]
         return LLMResult(
             content=msg.content or "",
-            tool_calls=getattr(msg, "tool_calls", None) or [],
+            tool_calls=tool_calls,
             usage=usage,
             raw=resp,
         )
