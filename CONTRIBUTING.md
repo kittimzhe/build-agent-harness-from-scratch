@@ -22,10 +22,11 @@
 本仓库的代码是「一个会生长的 Agent Runtime」，请遵守：
 
 - **内核在 `harness/`，案例在 `examples/`**。正文 markdown 用中文文件名，代码用英文路径。
-- **内核只加能力、不改已公开接口**。`LLMClient.chat` 的签名从第 01 章起冻住；加能力通过新方法或新字段，不破坏老调用方。
-- **每章案例从仓库根目录 `python examples/xx.py` 跑通**。案例里允许用「相对于仓库根的 `sys.path.insert`」来 import `harness`（第 01 章这样比一上来教 `pip install -e .` 更轻）；**内核本身不要靠 `sys.path`**。配置统一用 `find_dotenv(usecwd=True)` 自动向上查找 `.env`。
-- **对外返回自己的结构**（如 `LLMResult`），不把 OpenAI SDK 对象漏进上层循环。
-- **不要为目录美观新增空的 `案例与源码-N` 文件夹**，也**不要先生成 02–18 的空 markdown 骨架**（空文件比死链更糟）。
+- **内核只加能力、不改已公开接口**。`LLMClient.chat` / `ChatSession.ask` / `AgentLoop.run` 的签名从各自章节起冻住；加能力通过新方法或新字段，不破坏老调用方。
+- **每章案例 `python examples/xx.py` 必须能跑通**（在仓库任意子目录都行，配置用 `find_dotenv(usecwd=True)` 自动向上查找 `.env`）。案例里允许用「相对于仓库根的 `sys.path.insert`」来 import `harness`（第 01 章这样比一上来教 `pip install -e .` 更轻）；**内核本身不要靠 `sys.path`**。
+- **案例的环境自检读内核的 `PROVIDERS`**，不要在案例里重复维护提供商表（换提供商会改两处）。
+- **对外返回自己的结构**（如 `LLMResult`、纯 dict），不把 OpenAI SDK 对象漏进上层循环。
+- **不要为目录美观新增空的 `案例与源码-N` 文件夹**，也**不要先生成未发布章节的空 markdown 骨架**（空文件比死链更糟）。
 
 ## 提 Issue
 

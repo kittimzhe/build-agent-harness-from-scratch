@@ -27,6 +27,9 @@ from harness.llm import PROVIDERS
 def check_env() -> str:
     """环境自检：确认 API Key 已配置（提供商表直接读内核的 PROVIDERS，不重复维护）。"""
     provider = os.getenv("LLM_PROVIDER", "deepseek")
+    if provider not in PROVIDERS:
+        print(f"❌ 未知的 LLM_PROVIDER={provider!r}，可选: {list(PROVIDERS)}")
+        sys.exit(1)
     key_env = PROVIDERS[provider][0]
     if not os.getenv(key_env) and provider != "ollama":
         print(f"❌ 未检测到 {key_env}，请先复制 .env-example 为 .env 并填入 API Key")

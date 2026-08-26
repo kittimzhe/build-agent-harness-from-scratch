@@ -142,6 +142,8 @@
    ```
 
    > 代码用 `find_dotenv()` 自动向上查找 `.env`，所以在仓库任意子目录运行都能读到配置。遇到报错见[新手入门与常见问题](新手入门与常见问题.md)。
+   >
+   > 跑通后可继续：`python examples/02_chat_history.py`（消息状态）、`python examples/05_tool_loop.py`（工具循环）——对应已发布的第 02 / 05 章。
 
 ---
 
