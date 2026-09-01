@@ -53,10 +53,17 @@ class ChatSession:
         为什么默认 6：一轮 = user + assistant 两条，6 条 ≈ 最近 3 轮。
         注意：截断会丢早期记忆（模型会「忘事」）——这是第 08 章
         Context 治理（压缩 / 摘要 / 按需读取）要解决的问题。
+
+        （第 08 章加固）按轮成对裁：若最后片段从一轮中间切开、首条是
+        assistant，就再往下丢到 user 为止，避免历史以 assistant 开头触发
+        部分提供商的角色顺序报错。偶数 N 行为不变，奇数 N 更安全。
         """
         system = [m for m in self.messages if m["role"] == "system"]
         rest = [m for m in self.messages if m["role"] != "system"]
-        self.messages = system + rest[-keep_last_n:]
+        kept = rest[-keep_last_n:]
+        while kept and kept[0]["role"] not in ("user", "tool"):
+            kept = kept[1:]
+        self.messages = system + kept
 
     @property
     def turns(self) -> int:
