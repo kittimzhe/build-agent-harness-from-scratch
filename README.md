@@ -10,9 +10,9 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat)
 ![Status](https://img.shields.io/badge/status-持续更新中-orange?style=flat)
-![Chapters](https://img.shields.io/badge/已发布-01·02·05-09f?style=flat)
+![Chapters](https://img.shields.io/badge/已发布-01·02·05·06-09f?style=flat)
 
-> 📌 **当前进度**：已发布 `01`（LLM 调用与环境准备）、`02`（消息状态与上下文窗口）、`05`（手写第一个工具循环）——「调用 → 状态 → 循环」三部曲收官；其余章节规划中，侧边栏已标注，点开不会 404。
+> 📌 **当前进度**：已发布 `01`（LLM 调用）、`02`（消息状态）、`05`（工具循环）、`06`（工具容错）——「调用 → 状态 → 循环 → 容错」主线四连；其余章节规划中，侧边栏已标注，点开不会 404。
 
 [快速开始](#-快速开始) • [教程大纲](教程目录大纲.md) • [面试题库](面试题库.md) • [常见问题](新手入门与常见问题.md) • [更新日志](教程更新日志.md)
 
@@ -83,7 +83,7 @@
 ### 🔵 阶段二：Tool 层 —— 给 Agent 装手脚
 - 04 Function Calling 原理（规划中）
 - 05 手写第一个工具循环 ✅ 已发布
-- 06 工具集合与容错（重试 / 超时 / 幂等，规划中）
+- 06 工具集合与容错 ✅ 已发布
 - 07 结构化输出与 Schema 设计（规划中）
 
 ### 🟣 阶段三：Context 层 —— 管好模型的「工作内存」
@@ -143,7 +143,7 @@
 
    > 代码用 `find_dotenv()` 自动向上查找 `.env`，所以在仓库任意子目录运行都能读到配置。遇到报错见[新手入门与常见问题](新手入门与常见问题.md)。
    >
-   > 跑通后可继续：`python examples/02_chat_history.py`（消息状态）、`python examples/05_tool_loop.py`（工具循环）——对应已发布的第 02 / 05 章。
+   > 跑通后可继续：`python examples/02_chat_history.py`（消息状态）、`python examples/05_tool_loop.py`（工具循环）、`python examples/06_tool_retry.py`（工具容错，①–③ 无需 API）——对应已发布的第 02 / 05 / 06 章。
 
 ---
 

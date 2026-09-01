@@ -4,7 +4,7 @@
 - 第 01 章：LLMClient（llm.py）
 - 第 02 章：ChatSession（session.py，消息状态与用量）
 - 第 05 章：Tool / AgentLoop（loop.py，工具循环与护栏）
-- 第 06 章：tools（工具容错：重试 / 超时 / 幂等）
+- 第 06 章：ToolError / RetryPolicy / ResilientTool / ToolRegistry（tools.py，重试 / 超时 / 幂等）
 - 第 12 章：state（Checkpoint / 状态恢复）
 - 第 14 章：trace（日志 / 回放）
 
@@ -18,5 +18,10 @@
 from harness.llm import LLMClient, LLMResult
 from harness.session import ChatSession
 from harness.loop import Tool, AgentLoop
+from harness.tools import ToolError, RetryPolicy, ResilientTool, ToolRegistry
 
-__all__ = ["LLMClient", "LLMResult", "ChatSession", "Tool", "AgentLoop"]
+__all__ = [
+    "LLMClient", "LLMResult", "ChatSession",
+    "Tool", "AgentLoop",
+    "ToolError", "RetryPolicy", "ResilientTool", "ToolRegistry",
+]
