@@ -10,9 +10,9 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat)
 ![Status](https://img.shields.io/badge/status-持续更新中-orange?style=flat)
-![Chapters](https://img.shields.io/badge/已发布-01·02·05·06·07·08-09f?style=flat)
+![Chapters](https://img.shields.io/badge/已发布-01·02·05·06·07·08·09-09f?style=flat)
 
-> 📌 **当前进度**：已发布 `01`（LLM 调用）、`02`（消息状态）、`05`（工具循环）、`06`（工具容错）、`07`（结构化输出）、`08`（Context 治理）——「调用 → 状态 → 循环 → 容错 → 结构化 → 治理」主线六连，阶段三 Context 层开局；其余章节规划中，侧边栏已标注，点开不会 404。
+> 📌 **当前进度**：已发布 `01`（LLM 调用）、`02`（消息状态）、`05`（工具循环）、`06`（工具容错）、`07`（结构化输出）、`08`（Context 治理）、`09`（记忆体系）——「调用 → 状态 → 循环 → 容错 → 结构化 → 治理 → 记忆」主线七连，阶段三 Context 层收官；其余章节规划中，侧边栏已标注，点开不会 404。
 
 [快速开始](#-快速开始) • [教程大纲](教程目录大纲.md) • [面试题库](面试题库.md) • [常见问题](新手入门与常见问题.md) • [更新日志](教程更新日志.md)
 
@@ -88,7 +88,7 @@
 
 ### 🟣 阶段三：Context 层 —— 管好模型的「工作内存」
 - 08 Context 治理：压缩、取舍、按需读取 ✅ 已发布
-- 09 记忆体系：文件 / 会话记忆 vs 向量记忆
+- 09 记忆体系：文件 / 会话记忆 vs 向量记忆 ✅ 已发布
 
 ### 🟠 阶段四：State 层 —— 让长任务可恢复
 - 10 任务拆解与 Planning
@@ -143,7 +143,7 @@
 
    > 代码用 `find_dotenv()` 自动向上查找 `.env`，所以在仓库任意子目录运行都能读到配置。遇到报错见[新手入门与常见问题](新手入门与常见问题.md)。
    >
-   > 跑通后可继续：`python examples/02_chat_history.py`（消息状态）、`python examples/05_tool_loop.py`（工具循环）、`python examples/06_tool_retry.py`（工具容错）、`python examples/07_structured_output.py`（结构化输出）、`python examples/08_context_governance.py`（Context 治理）——对应已发布的第 02 / 05 / 06 / 07 / 08 章（06、07、08 的部分 demo 无需 API）。
+   > 跑通后可继续：`python examples/02_chat_history.py`（消息状态）、`python examples/05_tool_loop.py`（工具循环）、`python examples/06_tool_retry.py`（工具容错）、`python examples/07_structured_output.py`（结构化输出）、`python examples/08_context_governance.py`（Context 治理）、`python examples/09_memory.py`（记忆体系，全部无需 API）——对应已发布的第 02 / 05 / 06 / 07 / 08 / 09 章。
 
 ---
 

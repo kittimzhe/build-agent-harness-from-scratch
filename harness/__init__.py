@@ -7,6 +7,7 @@
 - 第 06 章：ToolError / RetryPolicy / ResilientTool / ToolRegistry（tools.py，重试 / 超时 / 幂等）
 - 第 07 章：extract_json / strict_validate / structured_chat（schema.py，结构化输出与自纠）
 - 第 08 章：estimate_tokens / keep_last_turns / summarize / compact / select_by_budget / ReferenceLibrary（context.py，Context 治理）
+- 第 09 章：FileMemory / VectorMemory / toy_embed / cosine / retrieved_context（memory.py，记忆体系）
 - 第 12 章：state（Checkpoint / 状态恢复）
 - 第 14 章：trace（日志 / 回放）
 
@@ -25,6 +26,7 @@ from harness.schema import StructuredOutputError, extract_json, strict_validate,
 from harness.context import (
     estimate_tokens, keep_last_turns, summarize, compact, select_by_budget, ReferenceLibrary,
 )
+from harness.memory import FileMemory, VectorMemory, toy_embed, cosine, retrieved_context
 
 __all__ = [
     "LLMClient", "LLMResult", "ChatSession",
@@ -33,4 +35,5 @@ __all__ = [
     "StructuredOutputError", "extract_json", "strict_validate", "structured_chat",
     "estimate_tokens", "keep_last_turns", "summarize", "compact",
     "select_by_budget", "ReferenceLibrary",
+    "FileMemory", "VectorMemory", "toy_embed", "cosine", "retrieved_context",
 ]
