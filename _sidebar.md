@@ -17,10 +17,10 @@
   - [08 Context 治理](08-Context治理.md)
   - [09 记忆体系：文件 vs 向量](09-记忆体系.md)
 
-- **阶段四 · State 层（规划中）**
-  - 10 任务拆解与 Planning
-  - 11 失败策略与反思
-  - 12 Checkpoint 与状态恢复
+- **阶段四 · State 层**
+  - [10 任务拆解与 Planning](10-任务拆解与Planning.md)
+  - 11 失败策略与反思（规划中）
+  - 12 Checkpoint 与状态恢复（规划中）
 
 - **阶段五 · Runtime 层（规划中）**
   - 13 封装 Mini Agent Runtime
