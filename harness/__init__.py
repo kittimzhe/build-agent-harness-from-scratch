@@ -9,6 +9,7 @@
 - 第 08 章：estimate_tokens / keep_last_turns / summarize / compact / select_by_budget / ReferenceLibrary（context.py，Context 治理）
 - 第 09 章：FileMemory / VectorMemory / toy_embed / cosine / retrieved_context（memory.py，记忆体系）
 - 第 10 章：Plan / PlanStep / make_plan / execute_plan（planning.py，任务拆解与 Planning）
+- 第 11 章：Reflection / reflect / retry_with_reflection（reflection.py，失败策略与反思）
 - 第 12 章：state（Checkpoint / 状态恢复）
 - 第 14 章：trace（日志 / 回放）
 
@@ -29,6 +30,7 @@ from harness.context import (
 )
 from harness.memory import FileMemory, VectorMemory, toy_embed, cosine, retrieved_context
 from harness.planning import Plan, PlanStep, make_plan, execute_plan
+from harness.reflection import Reflection, ReflectionResult, reflect, retry_with_reflection
 
 __all__ = [
     "LLMClient", "LLMResult", "ChatSession",
@@ -39,4 +41,5 @@ __all__ = [
     "select_by_budget", "ReferenceLibrary",
     "FileMemory", "VectorMemory", "toy_embed", "cosine", "retrieved_context",
     "Plan", "PlanStep", "make_plan", "execute_plan",
+    "Reflection", "ReflectionResult", "reflect", "retry_with_reflection",
 ]
