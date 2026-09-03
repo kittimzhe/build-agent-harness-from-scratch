@@ -20,7 +20,7 @@
 - **阶段四 · State 层**
   - [10 任务拆解与 Planning](10-任务拆解与Planning.md)
   - [11 失败策略与反思](11-失败策略与反思.md)
-  - 12 Checkpoint 与状态恢复（规划中）
+  - [12 Checkpoint 与状态恢复](12-Checkpoint与状态恢复.md)
 
 - **阶段五 · Runtime 层（规划中）**
   - 13 封装 Mini Agent Runtime
