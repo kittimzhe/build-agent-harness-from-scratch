@@ -27,10 +27,10 @@
   - [14 可观测：Trace/日志/回放](14-可观测Trace日志回放.md)
   - [15 终止条件·权限·安全](15-终止条件权限安全.md)
 
-- **阶段六 · Protocol 与实战（规划中）**
-  - 16 MCP/A2A/Skills 接入
-  - 17 实战项目：深度研究助手
-  - 18 部署交付：FastAPI + Docker
+- **阶段六 · Protocol 与实战**
+  - [16 MCP/A2A/Skills 接入](16-MCP-A2A-Skills接入.md)
+  - 17 实战项目：深度研究助手 Agent（规划中）
+  - 18 部署交付：FastAPI + Docker（规划中）
 
 - **附录**
   - [全书术语表](全书术语表.md)

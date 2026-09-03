@@ -14,6 +14,7 @@
 - 第 13 章：AgentState / RuntimeEvent / MiniAgent（runtime.py，封装 Mini Agent Runtime）
 - 第 14 章：TraceEvent / Trace / Tracer / ScriptedLLM（trace.py，可观测 log/metric/trace/replay）
 - 第 15 章：StopConditions / ToolPolicy / PolicyGuard / DenySandbox / detect_injection（safety.py，终止条件·权限·安全）
+- 第 16 章：MCPTool / MCPServer / MCPClient / AgentEndpoint / a2a_tool / Skill / SkillLibrary（protocol.py，MCP / A2A / Skills 接入）
 
 设计原则：
 1. 内核只加能力，不改已公开接口。`LLMClient.chat` / `ChatSession.ask` /
@@ -41,6 +42,9 @@ from harness.trace import TraceEvent, Trace, Tracer, ScriptedLLM
 from harness.safety import (
     StopConditions, ToolPolicy, PolicyGuard, DenySandbox, InjectionReport, detect_injection,
 )
+from harness.protocol import (
+    MCPTool, MCPServer, MCPClient, AgentEndpoint, a2a_tool, Skill, SkillLibrary,
+)
 
 __all__ = [
     "LLMClient", "LLMResult", "ChatSession",
@@ -58,4 +62,6 @@ __all__ = [
     "TraceEvent", "Trace", "Tracer", "ScriptedLLM",
     "StopConditions", "ToolPolicy", "PolicyGuard", "DenySandbox",
     "InjectionReport", "detect_injection",
+    "MCPTool", "MCPServer", "MCPClient", "AgentEndpoint", "a2a_tool",
+    "Skill", "SkillLibrary",
 ]
