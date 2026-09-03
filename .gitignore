@@ -33,6 +33,11 @@ chroma_db/
 qdrant_data/
 data/local/
 
+# 实战项目运行时产物（第 17 章）
+.deep_research*/
+.checkpoint/
+trace.jsonl
+
 # 构建产物
 dist/
 build/

@@ -29,7 +29,7 @@
 
 - **阶段六 · Protocol 与实战**
   - [16 MCP/A2A/Skills 接入](16-MCP-A2A-Skills接入.md)
-  - 17 实战项目：深度研究助手 Agent（规划中）
+  - [17 实战项目：深度研究助手 Agent](17-实战项目深度研究助手.md)
   - 18 部署交付：FastAPI + Docker（规划中）
 
 - **附录**

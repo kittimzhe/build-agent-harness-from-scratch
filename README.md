@@ -10,9 +10,9 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat)
 ![Status](https://img.shields.io/badge/status-持续更新中-orange?style=flat)
-![Chapters](https://img.shields.io/badge/已发布-01·02·05·06·07·08·09·10·11·12·13·14·15·16-09f?style=flat)
+![Chapters](https://img.shields.io/badge/已发布-01·02·05·06·07·08·09·10·11·12·13·14·15·16·17-09f?style=flat)
 
-> 📌 **当前进度**：已发布 `01`（LLM 调用）、`02`（消息状态）、`05`（工具循环）、`06`（工具容错）、`07`（结构化输出）、`08`（Context 治理）、`09`（记忆体系）、`10`（任务拆解与 Planning）、`11`（失败策略与反思）、`12`（Checkpoint 与状态恢复）、`13`（封装 Mini Agent Runtime）、`14`（可观测：Trace/日志/回放）、`15`（终止条件·权限·安全）、`16`（MCP/A2A/Skills 接入）——「调用 → 状态 → 循环 → 容错 → 结构化 → 治理 → 记忆 → 规划 → 反思 → 保进度 → 封 runtime → 可观测 → 安全 → 接协议」主线十四连，阶段六 Protocol 开局；其余章节规划中，侧边栏已标注，点开不会 404。
+> 📌 **当前进度**：已发布 `01`（LLM 调用）、`02`（消息状态）、`05`（工具循环）、`06`（工具容错）、`07`（结构化输出）、`08`（Context 治理）、`09`（记忆体系）、`10`（任务拆解与 Planning）、`11`（失败策略与反思）、`12`（Checkpoint 与状态恢复）、`13`（封装 Mini Agent Runtime）、`14`（可观测：Trace/日志/回放）、`15`（终止条件·权限·安全）、`16`（MCP/A2A/Skills 接入）、`17`（实战项目：深度研究助手 Agent）——「调用 → 状态 → 循环 → 容错 → 结构化 → 治理 → 记忆 → 规划 → 反思 → 保进度 → 封 runtime → 可观测 → 安全 → 接协议 → 做项目」主线十五连，阶段六推进至实战；仅剩 `18` 部署交付规划中，侧边栏已标注，点开不会 404。
 
 [快速开始](#-快速开始) • [教程大纲](教程目录大纲.md) • [面试题库](面试题库.md) • [常见问题](新手入门与常见问题.md) • [更新日志](教程更新日志.md)
 
@@ -102,7 +102,7 @@
 
 ### 🟤 阶段六：Protocol 与实战
 - 16 MCP / A2A / Skills 接入 ✅ 已发布
-- 17 实战项目：深度研究助手 Agent
+- 17 实战项目：深度研究助手 Agent ✅ 已发布
 - 18 部署交付：FastAPI + Docker
 
 > 📎 附录：[全书术语表](全书术语表.md) · [面试题库](面试题库.md) · [新手常见问题](新手入门与常见问题.md) · [工具资源索引](工具导航与参考资料索引.md) · [更新日志](教程更新日志.md)
@@ -143,7 +143,7 @@
 
    > 代码用 `find_dotenv()` 自动向上查找 `.env`，所以在仓库任意子目录运行都能读到配置。遇到报错见[新手入门与常见问题](新手入门与常见问题.md)。
    >
-   > 跑通后可继续：`python examples/02_chat_history.py`（消息状态）、`python examples/05_tool_loop.py`（工具循环）、`python examples/06_tool_retry.py`（工具容错）、`python examples/07_structured_output.py`（结构化输出）、`python examples/08_context_governance.py`（Context 治理）、`python examples/09_memory.py`（记忆体系，全部无需 API）、`python examples/10_planning.py`（任务拆解与 Planning）、`python examples/11_reflection.py`（失败策略与反思）、`python examples/12_checkpoint.py`（断点续跑，全部无需 API）、`python examples/13_runtime.py`（封装 Mini Agent Runtime）、`python examples/14_trace.py`（可观测 Trace/日志/回放）、`python examples/15_safety.py`（终止条件·权限·安全，全部无需 API）、`python examples/16_protocol.py`（MCP/A2A/Skills 接入，全部无需 API）——对应已发布的第 02 / 05 / 06 / 07 / 08 / 09 / 10 / 11 / 12 / 13 / 14 / 15 / 16 章。
+   > 跑通后可继续：`python examples/02_chat_history.py`（消息状态）、`python examples/05_tool_loop.py`（工具循环）、`python examples/06_tool_retry.py`（工具容错）、`python examples/07_structured_output.py`（结构化输出）、`python examples/08_context_governance.py`（Context 治理）、`python examples/09_memory.py`（记忆体系，全部无需 API）、`python examples/10_planning.py`（任务拆解与 Planning）、`python examples/11_reflection.py`（失败策略与反思）、`python examples/12_checkpoint.py`（断点续跑，全部无需 API）、`python examples/13_runtime.py`（封装 Mini Agent Runtime）、`python examples/14_trace.py`（可观测 Trace/日志/回放）、`python examples/15_safety.py`（终止条件·权限·安全，全部无需 API）、`python examples/16_protocol.py`（MCP/A2A/Skills 接入，全部无需 API）、`python projects/deep_research/main.py --offline`（第 17 章实战：深度研究助手，全部无需 API）——对应已发布的第 02 / 05 / 06 / 07 / 08 / 09 / 10 / 11 / 12 / 13 / 14 / 15 / 16 / 17 章。
 
 ---
 
