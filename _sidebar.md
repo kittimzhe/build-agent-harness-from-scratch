@@ -24,7 +24,7 @@
 
 - **阶段五 · Runtime 层**
   - [13 封装 Mini Agent Runtime](13-封装MiniAgentRuntime.md)
-  - 14 可观测：Trace/日志/回放（规划中）
+  - [14 可观测：Trace/日志/回放](14-可观测Trace日志回放.md)
   - 15 终止条件·权限·安全（规划中）
 
 - **阶段六 · Protocol 与实战（规划中）**

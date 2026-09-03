@@ -150,4 +150,4 @@ python examples/13_runtime.py
 - 用 `on_event` 观察每一步，知道这些事件是 trace 的原料
 - 说清 mini runtime 与 LangGraph / OpenAI Agents SDK 的「同族」关系
 
-➡️ 下一章 **14 可观测：Trace / 日志 / 回放**（阶段五）：本章 `on_event` 只到「能钩住」，下一章回答「然后呢」——log / metric / trace / replay 四件套，把每一步的输入输出、耗时、工具调用存下来，做到事后能查、能回放、能接 Langfuse。可回[教程目录大纲](教程目录大纲.md)看全局。
+➡️ 下一章 [**14 可观测：Trace / 日志 / 回放 →**](14-可观测Trace日志回放.md)（阶段五）：本章 `on_event` 只到「能钩住」，下一章回答「然后呢」——log / metric / trace / replay 四件套，把每一步的输入输出、耗时、工具调用存下来，做到事后能查、能回放、能接 Langfuse。可回[教程目录大纲](教程目录大纲.md)看全局。
