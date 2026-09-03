@@ -22,10 +22,10 @@
   - [11 失败策略与反思](11-失败策略与反思.md)
   - [12 Checkpoint 与状态恢复](12-Checkpoint与状态恢复.md)
 
-- **阶段五 · Runtime 层（规划中）**
-  - 13 封装 Mini Agent Runtime
-  - 14 可观测：Trace/日志/回放
-  - 15 终止条件·权限·安全
+- **阶段五 · Runtime 层**
+  - [13 封装 Mini Agent Runtime](13-封装MiniAgentRuntime.md)
+  - 14 可观测：Trace/日志/回放（规划中）
+  - 15 终止条件·权限·安全（规划中）
 
 - **阶段六 · Protocol 与实战（规划中）**
   - 16 MCP/A2A/Skills 接入

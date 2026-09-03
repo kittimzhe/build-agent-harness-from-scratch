@@ -11,6 +11,7 @@
 - 第 10 章：Plan / PlanStep / make_plan / execute_plan（planning.py，任务拆解与 Planning）
 - 第 11 章：Reflection / reflect / retry_with_reflection（reflection.py，失败策略与反思）
 - 第 12 章：plan_to_dict / plan_from_dict / save_checkpoint / load_checkpoint / run_plan_with_checkpoint（state.py，Checkpoint 与状态恢复）
+- 第 13 章：AgentState / RuntimeEvent / MiniAgent（runtime.py，封装 Mini Agent Runtime）
 - 第 14 章：trace（日志 / 回放）
 
 设计原则：
@@ -34,6 +35,7 @@ from harness.reflection import Reflection, ReflectionResult, reflect, retry_with
 from harness.state import (
     plan_to_dict, plan_from_dict, save_checkpoint, load_checkpoint, run_plan_with_checkpoint,
 )
+from harness.runtime import AgentState, RuntimeEvent, MiniAgent
 
 __all__ = [
     "LLMClient", "LLMResult", "ChatSession",
@@ -47,4 +49,5 @@ __all__ = [
     "Reflection", "ReflectionResult", "reflect", "retry_with_reflection",
     "plan_to_dict", "plan_from_dict", "save_checkpoint", "load_checkpoint",
     "run_plan_with_checkpoint",
+    "AgentState", "RuntimeEvent", "MiniAgent",
 ]

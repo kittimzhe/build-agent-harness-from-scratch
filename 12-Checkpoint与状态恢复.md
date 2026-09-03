@@ -160,4 +160,4 @@ python examples/12_checkpoint.py
 - 说清 Durable Execution 三句话：状态是真源、SAVE 是常态、只重跑没 done 的
 - 分清 at-least-once（本章）与「失败即停」（第 10 章）的取舍
 
-➡️ 下一章 **13 封装 Mini Agent Runtime**（阶段五 Runtime 层开局）：现在内核有九块砖了，但每一块都得自己手动装配——下一步把它们封装成一个**状态机 + 事件循环**的 mini runtime，并对比 LangGraph / OpenAI Agents SDK，看看我们手写的东西在「什么位置」。可回[教程目录大纲](教程目录大纲.md)看全局。
+➡️ 下一章 [**13 封装 Mini Agent Runtime →**](13-封装MiniAgentRuntime.md)（阶段五 Runtime 层开局）：现在内核有九块砖了，但每一块都得自己手动装配——下一步把它们封装成一个**状态机 + 事件循环**的 mini runtime，并对比 LangGraph / OpenAI Agents SDK，看看我们手写的东西在「什么位置」。可回[教程目录大纲](教程目录大纲.md)看全局。
