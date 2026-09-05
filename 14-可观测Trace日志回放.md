@@ -1,6 +1,6 @@
 # 14 - 可观测：Trace / 日志 / 回放
 
-> 📌 **第 14 章 · 阶段五 Runtime 层** · [← 返回目录大纲](教程目录大纲.md) · [上一章 13 封装 Mini Agent Runtime →](13-封装MiniAgentRuntime.md) · 下一章 15 终止条件·权限·安全（规划中）
+> 📌 **第 14 章 · 阶段五 Runtime 层** · [← 返回目录大纲](教程目录大纲.md) · [上一章 13 封装 Mini Agent Runtime →](13-封装MiniAgentRuntime.md) · [下一章 15 终止条件·权限·安全 →](15-终止条件权限安全.md)
 
 ---
 

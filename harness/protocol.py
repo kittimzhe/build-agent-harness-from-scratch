@@ -111,6 +111,10 @@ class AgentEndpoint:
         self.name = name
 
     def send(self, message: str) -> str:
+        # MiniAgent 要求 state == new 才能跑；不 reset 的话第二单会 RuntimeError。
+        # A2A 语义是「随时可咨询的专家」，所以这里自动复位再跑。
+        if getattr(self.agent, "state", "new") != "new":
+            self.agent.reset()
         out = self.agent.run(message)
         return out.get("reply", "")
 

@@ -10,9 +10,9 @@
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat)
 ![Status](https://img.shields.io/badge/status-持续更新中-orange?style=flat)
-![Chapters](https://img.shields.io/badge/全部章节完成-01·02·05…18-09f?style=flat)
+![Chapters](https://img.shields.io/badge/主线16章全部完成-01·02·05–18（03/04已并入）-09f?style=flat)
 
-> 📌 **当前进度**：全部章节已发布 ✅——`01`（LLM 调用）、`02`（消息状态）、`05`（工具循环）、`06`（工具容错）、`07`（结构化输出）、`08`（Context 治理）、`09`（记忆体系）、`10`（任务拆解与 Planning）、`11`（失败策略与反思）、`12`（Checkpoint 与状态恢复）、`13`（封装 Mini Agent Runtime）、`14`（可观测：Trace/日志/回放）、`15`（终止条件·权限·安全）、`16`（MCP/A2A/Skills 接入）、`17`（实战项目：深度研究助手 Agent）、`18`（部署交付：FastAPI + Docker）。「调用 → 状态 → 循环 → 容错 → 结构化 → 治理 → 记忆 → 规划 → 反思 → 保进度 → 封 runtime → 可观测 → 安全 → 接协议 → 做项目 → 上服务」主线闭环。
+> 📌 **当前进度**：主线 16 章全部发布 ✅（01、02、05–18；03/04 的知识点已分别并入 05/07，不单独成章，编号保留历史跳号）——`01`（LLM 调用）、`02`（消息状态）、`05`（工具循环）、`06`（工具容错）、`07`（结构化输出）、`08`（Context 治理）、`09`（记忆体系）、`10`（任务拆解与 Planning）、`11`（失败策略与反思）、`12`（Checkpoint 与状态恢复）、`13`（封装 Mini Agent Runtime）、`14`（可观测：Trace/日志/回放）、`15`（终止条件·权限·安全）、`16`（MCP/A2A/Skills 接入）、`17`（实战项目：深度研究助手 Agent）、`18`（部署交付：FastAPI + Docker）。「调用 → 状态 → 循环 → 容错 → 结构化 → 治理 → 记忆 → 规划 → 反思 → 保进度 → 封 runtime → 可观测 → 安全 → 接协议 → 做项目 → 上服务」主线闭环。
 
 [快速开始](#-快速开始) • [教程大纲](教程目录大纲.md) • [面试题库](面试题库.md) • [常见问题](新手入门与常见问题.md) • [更新日志](教程更新日志.md)
 
@@ -78,10 +78,10 @@
 ### 🟢 阶段一：Prompt 层 —— 让模型动起来
 - 01 LLM 调用与环境准备 ✅ 已发布
 - 02 消息状态与上下文窗口 ✅ 已发布
-- 03 Prompt 与结构化输出（规划中）
+- ~~03 Prompt 与结构化输出~~（已并入 07）
 
 ### 🔵 阶段二：Tool 层 —— 给 Agent 装手脚
-- 04 Function Calling 原理（规划中）
+- ~~04 Function Calling 原理~~（已并入 05/07）
 - 05 手写第一个工具循环 ✅ 已发布
 - 06 工具集合与容错 ✅ 已发布
 - 07 结构化输出与 Schema 设计 ✅ 已发布

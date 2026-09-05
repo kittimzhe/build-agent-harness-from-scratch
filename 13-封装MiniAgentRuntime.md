@@ -1,6 +1,6 @@
 # 13 - 封装 Mini Agent Runtime
 
-> 📌 **第 13 章 · 阶段五 Runtime 层（开局）** · [← 返回目录大纲](教程目录大纲.md) · [上一章 12 Checkpoint 与状态恢复 →](12-Checkpoint与状态恢复.md) · 下一章 14 可观测：Trace/日志/回放（规划中）
+> 📌 **第 13 章 · 阶段五 Runtime 层（开局）** · [← 返回目录大纲](教程目录大纲.md) · [上一章 12 Checkpoint 与状态恢复 →](12-Checkpoint与状态恢复.md) · [下一章 14 可观测：Trace/日志/回放 →](14-可观测Trace日志回放.md)
 
 ---
 
@@ -12,15 +12,17 @@
 - 说清 mini runtime 与 **LangGraph / OpenAI Agents SDK** 的关系：价值观一致（显式状态、可插拔、可观察），只是别人替你写好了更多。
 - 落地第十一块砖：`harness/runtime.py`（`AgentState` / `RuntimeEvent` / `MiniAgent`）。
 
-**学习建议：** demo ①–③ 用 `FakeLLM` 确定性输出、**无需 API Key**；⑤ 才走真实 LLM。本章是「装配」，代码都很薄——重点不是写了多少，而是**看清框架到底在替你做什么**。
+**学习建议：** demo ①–③ 用 `FakeLLM` 确定性输出、**无需 API Key**；⑤ 才走真实 LLM。本章是「给循环穿外壳」，代码都很薄——重点不是写了多少，而是**看清框架到底在替你做什么**。
+
+> ⚠️ **先划清职责**：`MiniAgent` 是**对话/工具循环的运行时外壳**（状态机 + 钩子）。**记忆（09）、规划（10）、checkpoint（12）不是循环的职责**，也不在本章装配——它们在**流程编排**层（第 17 章的 `DeepResearchAgent`）才被接线。两个 Runtime 各司其职，别混。
 
 ---
 
-## 1、从「十块砖」到「一个 Agent」
+## 1、从「手动拼循环」到「一个 Agent 对象」
 
-前十二章攒了十块砖，但每一块都要你手动装配：new 一个 `LLMClient`、包几个 `Tool`、再 new 一个 `AgentLoop`、跑完自己判 `stopped_by`…… 散落一地的能力，谈不上「可复用的 runtime」。
+前十二章攒了十块砖，但**循环这条主线**仍要你手动装配：new 一个 `LLMClient`、包几个 `Tool`、再 new 一个 `AgentLoop`、跑完自己判 `stopped_by`…… 散落一地的能力，谈不上「可复用的 runtime」。
 
-本章做最后一步封装：把「这堆砖」收进一个对象：
+本章做一次**针对循环**的封装——把「LLM + 工具循环 + 护栏」收进一个对象：
 
 ```python
 agent = MiniAgent(system="你是周报助手", tools=[Tool(add)], name="reporter")
@@ -28,6 +30,17 @@ agent.on(lambda e: print(e.type))       # 钩子：观察每一步
 out = agent.run("算一下 1+2")           # new → running → done/error
 print(agent.state, agent.events)        # 状态与全程事件都可取到
 ```
+
+### MiniAgent（13）vs DeepResearchAgent（17）：两个 Runtime，各司其职
+
+| | `MiniAgent`（第 13 章） | `DeepResearchAgent`（第 17 章） |
+| --- | --- | --- |
+| 形态 | **循环** Runtime：模型每轮现想下一步 | **工作流** Runtime：先固化计划、再逐步执行 |
+| 装配了什么 | `AgentLoop` + 状态机 + `start/finish/error` 钩子 | Plan + 搜索 Tool + 记忆 + checkpoint + Tracer + 终止条件 |
+| 不装配什么 | 记忆 / 规划 / checkpoint（不是循环的职责） | 对话轮次（它不是聊天对象） |
+| 适合 | 对话、问答、单轮多步工具调用 | 可交付的多步任务（研究报告、批处理） |
+
+> 面试一句话：**循环管「模型下一步做什么」，工作流管「这单任务怎么走完」**。第 17 章的深度研究没有用 `MiniAgent`，正是因为它要的是后者。
 
 一个 Agent 实例从此是三样东西的组合：
 
@@ -73,7 +86,7 @@ out = AgentLoop(...).run(user_input, system)   # 委托第 05 章的循环引擎
 
 完整实现见 [harness/runtime.py](harness/runtime.py)。
 
-> 🧱 第十一块砖落位：内核从「一堆工具函数」进化成了「一个可复用的 Agent 对象」。到这里，你已经拥有了一个**能调用、有记忆、能循环、扛得住、说人话、懂治理、记得住、拆得动、救得回、保得住的 mini runtime**——剩下的章节（可观测、安全、协议、实战）是在它上面加「生产级」的壳。
+> 🧱 第十一块砖落位：内核从「一堆工具函数」进化成了「一个可复用的 Agent 对象」——**能调用、能循环、扛得住（max_rounds 护栏）、可观察（钩子）**的循环外壳。剩下的章节（可观测、安全、协议、实战）是在它上面加「生产级」的壳；而**记忆 / 规划 / checkpoint 的接线发生在第 17 章的流程编排里**。
 
 ---
 
@@ -118,7 +131,7 @@ python examples/13_runtime.py
   OpenAI Agents SDK：…handoff + guardrail + tracing…
   本教程 MiniAgent：一条循环 + 显式状态字段 + 钩子，最薄但价值观一致
 
-⑤ 真实 LLM：九块砖装进一个 MiniAgent
+⑤ 真实 LLM：一个 MiniAgent 跑通完整循环
   [事件] start
   [事件] finish
   state=done，回复：37 + 5 = 42
@@ -149,5 +162,6 @@ python examples/13_runtime.py
 - 说清 Agent 状态机（new/running/done/error + 护栏 + reset）与事件循环 + 钩子
 - 用 `on_event` 观察每一步，知道这些事件是 trace 的原料
 - 说清 mini runtime 与 LangGraph / OpenAI Agents SDK 的「同族」关系
+- 说清 `MiniAgent`（循环外壳）与第 17 章 `DeepResearchAgent`（流程编排）的职责分界
 
 ➡️ 下一章 [**14 可观测：Trace / 日志 / 回放 →**](14-可观测Trace日志回放.md)（阶段五）：本章 `on_event` 只到「能钩住」，下一章回答「然后呢」——log / metric / trace / replay 四件套，把每一步的输入输出、耗时、工具调用存下来，做到事后能查、能回放、能接 Langfuse。可回[教程目录大纲](教程目录大纲.md)看全局。

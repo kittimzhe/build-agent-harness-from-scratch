@@ -47,6 +47,7 @@ class DeepResearchAgent:
         self.notes = FileMemory(self.notes_path)           # 09：长期记忆（笔记）
         self.vec = VectorMemory()                          # 09：向量记忆（检索去重）
         self.limits = StopConditions(max_rounds=8, max_output_chars=4000)  # 15：护栏
+        #                                    ^ 计划步数预算（检索前拦）；max_steps 默认 3，超过 8 步才会截断
 
     # ------------------------------------------------------------------ #
     # Phase 1：规划（10）
@@ -74,12 +75,14 @@ class DeepResearchAgent:
     def _research_step(self, desc: str, idx: int) -> str:
         """一步研究：搜索 → （空结果则改词再搜）→ 记笔记 + 存向量。"""
         text = self.search_tool.run(query=desc)
-        if "无相关结果" in text:
-            alt = self._reformulate(desc)                  # 11：失败换思路
+        trail = ""
+        if text.strip() == "（无相关结果）":
+            alt = self._reformulate(desc)                  # 11：失败换思路（确定性简化）
             text = self.search_tool.run(query=alt)
-        note = f"{desc}\n{text}"
+            trail = f"（空结果→改词重搜：{alt}）"
+        note = f"{desc}\n{text}{trail}"
         self.notes.remember(f"step{idx}", note)            # 09：文件记忆
-        self.vec.add(text, desc)                           # 09：向量记忆
+        self.vec.add(note, meta={"step": desc, "idx": idx})  # 09：向量记忆（meta 用 dict）
         return text
 
     # ------------------------------------------------------------------ #
@@ -114,6 +117,11 @@ class DeepResearchAgent:
         else:
             p = self._plan(question, max_steps=max_steps, plan=plan)
 
+        # 15：终止条件①——计划步数预算，在检索循环**之前**拦（超预算截断，不烧检索）
+        step_reason = self.limits.check(rounds=len(p.steps))
+        if step_reason:
+            p.steps = p.steps[:self.limits.max_rounds]
+
         # Phase 2：每步落盘执行（12）
         run_plan_with_checkpoint(p, self._research_step, self.checkpoint_path)
 
@@ -121,8 +129,8 @@ class DeepResearchAgent:
         context = self._assemble_context(question)
         report = self._synthesize(question, context)
 
-        # 15：输出护栏
-        reason = self.limits.check(rounds=len(p.steps), output_text=report)
+        # 15：终止条件②——输出字符预算，报告写完后检查
+        reason = self.limits.check(rounds=0, output_text=report)
         if reason:
             report = f"{report}\n\n（⚠️ 触发终止条件：{reason}）"
 

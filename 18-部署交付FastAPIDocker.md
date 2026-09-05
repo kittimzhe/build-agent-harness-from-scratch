@@ -7,7 +7,7 @@
 **本章课程目标：**
 
 - 说清「demo → 可上线服务」的三层：**服务化**（FastAPI 暴露 HTTP）、**容器化**（Docker 打成镜像）、**可运行**（healthcheck + 密钥注入 + 无状态）。
-- 掌握把 Agent 包成 HTTP 服务的三条原则：**无状态**、**只露协议**、**密钥不进镜像**。
+- 掌握把 Agent 包成 HTTP 服务的三条原则：**无状态**（每请求独立 workdir）、**只露协议**、**密钥不进镜像**。
 - 亲手把第 17 章的 `DeepResearchAgent` 包成 `POST /research`，能 `curl` 能 `docker run`。
 - 全书收官：从第 01 章的「一个 LLM 调用」到第 18 章的「一个可上线服务」，主线闭环。
 
@@ -23,7 +23,7 @@
 | --- | --- | --- |
 | **服务化** | 别人怎么调用你的 Agent | `FastAPI`：`GET /health` + `POST /research` |
 | **容器化** | 换个机器怎么还能跑 | `Dockerfile`：依赖 + 代码 + 启动命令 |
-| **可运行** | 跑起来之后怎么活下来 | `HEALTHCHECK` / 存活探针 / 密钥不含在镜像里 |
+| **可运行** | 跑起来之后怎么活下来 | `/health` 存活探针（编排器周期打点）/ 密钥不含在镜像里 |
 
 > 一句话：**内核是大脑，HTTP 是皮肤，Docker 是盔甲。** 皮肤定接口、盔甲管交付，大脑（前 17 章）一个字节都不用改。
 
@@ -31,7 +31,7 @@
 
 ## 2、三条部署原则
 
-1. **无状态**：每个请求独立建一个 `DeepResearchAgent`。为什么？Agent 带记忆（第 09 章）和检查点（第 12 章），若进程级单例，用户 A 的笔记会串进用户 B 的报告。**请求即用即弃，状态落盘在各自 workdir，不在进程里。**
+1. **无状态**：每个请求独立建一个 `DeepResearchAgent` **+ 独立 workdir**（`base/req-<uuid>`）。为什么？Agent 带记忆（第 09 章）和检查点（第 12 章），若共享进程单例**或共享目录**，用户 A 的笔记/checkpoint 会串进用户 B 的报告——串味不只发生在进程里，也发生在文件层。**请求即用即弃；要续跑，显式带响应里返回的 `checkpoint_id` 复用该目录。**
 2. **只露协议**：请求/响应用 Pydantic 模型定死（`ResearchRequest` / `ResearchResponse`），内核的私有结构（LLMResult / Plan / TraceEvent 之类）**不流出 HTTP**。这也是第 01 章「内核只认自己的结构、不向 SDK 泄漏」在服务层的翻版。
 3. **密钥不进镜像**：`.env` 不进 `docker build`，运行时用 `--env-file .env` 或 `-e DEEPSEEK_API_KEY=...` 注入。
 
@@ -44,7 +44,7 @@ GET  /health        # 存活探针 → {"status": "ok", "offline": ...}
 POST /research      # body {question, plan?, max_steps} → {report, final_state, rounds, tool_calls, trace_file}
 ```
 
-`_build_agent()` 是唯一的分叉点：`DEEP_RESEARCH_OFFLINE=1` 时用 `ScriptedLLM` + `FakeSearchEngine` 冒烟（无外部依赖），否则 `LLMClient()` 真实研究。
+`_build_agent(workdir)` 是唯一的分叉点：`DEEP_RESEARCH_OFFLINE=1` 时用 `ScriptedLLM` + `FakeSearchEngine` 冒烟（无外部依赖），否则 `LLMClient()` 真实研究。`workdir` 由 `_workdir_for()` 决定：新请求拿 `base/req-<uuid>` 新目录，带 `checkpoint_id` 的请求复用旧目录并 `resume=True`。
 
 > 为什么端点这么少？因为**复杂在 agent 内部（前 17 章），不在接口**。接口只负责「收问题、回报告」，剩下的交给 `DeepResearchAgent.research()`。
 
@@ -60,7 +60,7 @@ RUN pip install --no-cache-dir -r requirements-full.txt
 COPY harness ./harness                                 # ② 代码层
 COPY projects ./projects
 COPY deploy ./deploy
-COPY .env.example ./.env.example
+COPY .env-example ./.env-example
 EXPOSE 8000
 CMD ["uvicorn", "deploy.app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
@@ -111,7 +111,8 @@ curl -X POST http://127.0.0.1:8000/research \
   "final_state": "done",
   "rounds": 2,
   "tool_calls": 0,
-  "trace_file": ".deep_research/trace.jsonl"
+  "trace_file": ".deep_research/req-a1b2c3…/trace.jsonl",
+  "checkpoint_id": "req-a1b2c3…"
 }
 ```
 
@@ -136,7 +137,7 @@ docker run --rm -p 8000:8000 --env-file .env deep-research-agent
 | 服务起了但真实研究报 API key 错 | `.env` 没配 / 没加载 | `--env-file .env`，或确认 `find_dotenv` 找得到 |
 | `docker build` 卡在 pip | 网络 / 源慢 | 换 pip 源：`RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple ...` |
 | 容器里 `/research` 返回离线报告 | `DEEP_RESEARCH_OFFLINE=1` 带进去了 | 去掉该环境变量 / 用 `--env-file .env` |
-| 两个用户报告串味 | 用了进程级单例 agent | 保持每请求独立 agent（无状态） |
+| 两个用户报告串味 | 共享了进程单例**或共享 workdir** | 每请求独立 workdir（`req-<uuid>`）；续跑显式带 `checkpoint_id` |
 
 更多见 [新手入门与常见问题](新手入门与常见问题.md)。
 

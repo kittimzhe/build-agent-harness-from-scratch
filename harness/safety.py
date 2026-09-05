@@ -136,8 +136,10 @@ class PolicyGuard:
 # ---------------------------------------------------------------------------
 
 INJECTION_PATTERNS = (
+    # 只留「长而固定」的话术；短中文（如「你是」）会把正常句子全判成可疑，
+    # 误报率不可接受——启发式本来就该按「宁可漏报、不可误伤」设计。
     "ignore previous instructions", "disregard", "忘掉之前的指令", "ignore all",
-    "无视上面的", "system prompt", "从现在开始", "act as", "你是",
+    "无视上面的指令", "system prompt", "reveal your system", "开发者模式",
 )
 
 

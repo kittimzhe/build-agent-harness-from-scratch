@@ -52,13 +52,15 @@ def offline_demo(workdir=".deep_research_demo"):
     )
 
     question = "LangGraph 和 MCP 有什么关系？"
-    plan = ["LangGraph 是什么", "MCP 是什么", "它们怎么配合"]
+    # 第 4 步故意用一个语料必空的子问题，演示「空结果 → 改词重搜」的反思路径
+    plan = ["LangGraph 是什么", "MCP 是什么", "它们怎么配合", "量子引力的拓扑结构"]
     result = agent.research(question, plan=plan)
 
     print("\n【Phase 1 规划】子问题 =", [s.description for s in result["plan"].steps])
     print("\n【Phase 2 检索】各步状态：")
     for s in result["plan"].steps:
         print(f"  [{s.status}] {s.description}")
+    print("  （第 4 步语料必空 → 走『空结果→改词重搜』：见 notes.json step3）")
     print("\n【Phase 3 综合】报告：\n" + result["report"])
     print("\n【指标】", result["metrics"])
     print("\n【工件】checkpoint:", result["checkpoint"])

@@ -38,11 +38,14 @@ curl -X POST http://127.0.0.1:8000/research \
 {
   "report": "# 研究报告…",
   "final_state": "done",
-  "rounds": 1,
+  "rounds": 2,
   "tool_calls": 0,
-  "trace_file": ".deep_research/trace.jsonl"
+  "trace_file": ".deep_research/req-<uuid>/trace.jsonl",
+  "checkpoint_id": "req-<uuid>"
 }
 ```
+
+> `rounds: 2` = 规划一次 + 综合一次（两次 LLM 往返）。断点续跑：下次请求带上 `"checkpoint_id": "req-…"` 即复用该目录。
 
 ## Docker
 
@@ -54,6 +57,6 @@ docker run --rm -p 8000:8000 -e DEEP_RESEARCH_OFFLINE=1 deep-research-agent
 
 ## 设计原则
 
-- **无状态**：每请求独立 agent，避免跨用户记忆/检查点串味。
+- **无状态**：每请求独立 agent + 独立 workdir（`base/req-<uuid>`），文件层也不串味；续跑靠显式 `checkpoint_id`。
 - **只露协议**：请求/响应走 Pydantic 模型，内核私有结构不流出 HTTP。
 - **密钥不进镜像**：`.env` 运行时 `--env-file` / `-e` 注入。
