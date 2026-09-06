@@ -1,6 +1,5 @@
-# 完整依赖（含后续章节能力）
-# 先 pip install -r requirements.txt 跑通第 01 章
-# 需要后续章节能力时再：pip install -r requirements-full.txt
+# 完整依赖 = 核心依赖 + 部署（FastAPI/uvicorn）与文档加载等可选能力
+# 离线案例用 requirements.txt 就够；跑第 18 章服务冒烟才需要本文件
 
 -r requirements.txt
 

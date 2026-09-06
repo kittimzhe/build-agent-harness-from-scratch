@@ -1,6 +1,6 @@
-# 核心依赖（第 01–07 章够用）
-# 装这一个文件即可跑通第 01 章及前几章案例。
-# 阶段三起的能力（向量库 / 文档加载 / 部署）见 requirements-full.txt
+# 核心依赖：足以离线跑通全部主线案例 + CI（examples 06–16、17 离线、pytest 回归）
+# 向量库是手写的纯 math 实现，不需要 numpy。
+# 需要 FastAPI 冒烟（18 章）时再装 requirements-full.txt
 
 # OpenAI 兼容 SDK（DeepSeek/通义/OpenAI/Ollama 通用）
 openai>=1.50.0
