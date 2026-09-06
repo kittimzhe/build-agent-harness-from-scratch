@@ -85,10 +85,15 @@ CMD ["uvicorn", "deploy.app:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ## 6、运行案例
 
-**本地 + 离线冒烟（无 API）：**
+**本地 + 离线冒烟（无 API），两种方式：**
 
 ```bash
 pip install -r requirements-full.txt
+
+# 方式一（推荐，CI 同款）：一条命令跑完断言（无状态 + 续跑都验）
+DEEP_RESEARCH_OFFLINE=1 python deploy/smoke_test.py
+
+# 方式二：真起服务手动 curl
 DEEP_RESEARCH_OFFLINE=1 uvicorn deploy.app:app --port 8000
 ```
 

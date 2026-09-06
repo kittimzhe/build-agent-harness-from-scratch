@@ -20,6 +20,9 @@ uvicorn deploy.app:app --reload
 
 # 离线冒烟（无 API）
 DEEP_RESEARCH_OFFLINE=1 uvicorn deploy.app:app --port 8000
+
+# 一条命令跑完冒烟断言（CI 同款，不起服务）
+DEEP_RESEARCH_OFFLINE=1 python deploy/smoke_test.py
 ```
 
 ## 调接口

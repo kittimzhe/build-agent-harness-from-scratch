@@ -67,7 +67,7 @@
 | **记忆体系** | 文件/会话记忆 vs 向量记忆 | 主线讲取舍；手写最简向量库作教具/附录，再讲何时该上 Qdrant/Redis |
 | **可观测** | 自打 Trace + Langfuse | 第 14 章从零做观测 |
 | **部署** | FastAPI + Docker | 第 18 章从 demo 到可交付 |
-| **评测** | 自建回归集 + RAGAS | 附录讲 Agent Eval 框架 |
+| **评测** | 自建最小回归集（pytest，无需 API） | `tests/test_minimal_regression.py`，CI 每次推送自动跑 |
 
 ---
 

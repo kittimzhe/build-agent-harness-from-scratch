@@ -1,0 +1,54 @@
+name: Offline demos (no API key)
+
+# 全部章节的离线路径在 CI 里机器守门：
+# examples/06–16（FakeLLM/ScriptedLLM）+ 17 实战项目离线全流程
+# + 18 FastAPI 离线冒烟 + 附录最小回归（pytest）。
+# 不需要任何 API Key——这正是「离线替身」设计的回报。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  offline-demos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install core deps
+        run: pip install -r requirements.txt pytest
+
+      - name: Syntax check (harness / projects / deploy / tests)
+        run: python -m compileall -q harness projects/deep_research deploy tests
+
+      - name: Appendix minimal regression (pytest)
+        run: pytest tests/ -q
+
+      - name: Run offline demos 06-16
+        run: |
+          set -e
+          for f in examples/0[6-9]_*.py examples/1[0-6]_*.py; do
+            echo "::group::$f"
+            python "$f" > /dev/null
+            echo "::endgroup::"
+          done
+
+      - name: Run deep_research offline (17)
+        run: python projects/deep_research/main.py --offline > /dev/null
+
+      - name: FastAPI offline smoke (18)
+        run: |
+          pip install -r requirements-full.txt httpx
+          DEEP_RESEARCH_OFFLINE=1 python deploy/smoke_test.py
+
+      - name: Clean runtime artifacts
+        if: always()
+        run: rm -rf .deep_research* checkpoint.json trace.jsonl

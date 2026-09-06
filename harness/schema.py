@@ -69,7 +69,12 @@ def structured_chat(llm, messages: list[dict], model_cls: Type[T],
 
     - json_mode=True: 请求带 `response_format={"type": "json_object"}`（JSON Mode，
       只保证「是合法 JSON」，形状靠下面的 schema 提示来约束）。
-    - 每次失败：把「上一次的错误」作为一条 user 消息追加，让模型自己改——**自纠重试**。
+      Ollama 部分版本不支持该参数——首次报「不认识 response_format」类错误时自动
+      降级为不带该参数重试一次（提示词里已经把 schema 写死了，可靠性略降但能跑）。
+    - 每次失败：把**模型上一条的坏输出**（assistant）和**校验错误**（user）
+      都写回历史再让模型改——序列是 user → assistant(坏) → user(纠错提示)，
+      而不是只堆 user。这和第 06 章工具失败回喂 observation 是同一个道理：
+      模型要能「看见自己刚才错在哪」。
     - 重试耗尽仍失败：抛 StructuredOutputError（信息里含最后一轮的校验错误）。
 
     注：OpenAI / DeepSeek 等还支持原生 structured output
@@ -90,16 +95,26 @@ def structured_chat(llm, messages: list[dict], model_cls: Type[T],
 
     history = base
     last_err = ""
+    json_mode_ok = json_mode          # Ollama 等不支持时自动降级
     for attempt in range(max_retries + 1):
         kwargs = {}
-        if json_mode:
+        if json_mode_ok:
             kwargs["response_format"] = {"type": "json_object"}
-        result = llm.chat(history, **kwargs)
+        try:
+            result = llm.chat(history, **kwargs)
+        except Exception as e:        # noqa: BLE001 —— 提供商不支持 response_format
+            if json_mode_ok and "response_format" in str(e):
+                json_mode_ok = False  # 降级：不带该参数再试
+                continue
+            raise
         answer = result.content or ""
         try:
             return strict_validate(model_cls, answer)
         except StructuredOutputError as e:
             last_err = str(e)
+            # 关键：把坏输出写回 assistant，纠错提示写回 user——
+            # 让模型「看见」自己刚才输出了什么，而不是凭空猜。
+            history.append({"role": "assistant", "content": answer})
             history.append({
                 "role": "user",
                 "content": (

@@ -71,7 +71,14 @@ class LLMClient:
         if not base_url:
             raise ValueError(f"环境变量 {url_env} 未设置，请检查 .env")
 
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        # 调用层容错（第 06 章原则在 API 层的翻版）：超时 + 429/5xx 指数退避重试。
+        # 默认值从环境变量读，行为可用 LLM_TIMEOUT=0 / LLM_MAX_RETRIES=0 关掉。
+        self.timeout = float(os.getenv("LLM_TIMEOUT", "60"))
+        self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
+        self.retry_on = {429, 500, 502, 503, 504}
+
+        self.client = OpenAI(api_key=api_key, base_url=base_url,
+                             timeout=self.timeout, max_retries=0)
 
     def chat(self, messages: list[dict], **kwargs) -> LLMResult:
         """同步调用，返回 LLMResult。
@@ -79,14 +86,37 @@ class LLMClient:
         Args:
             messages: OpenAI 消息格式，如 [{"role": "user", "content": "你好"}]
             **kwargs: 透传给底层 create，如 temperature、max_tokens 等。
+
+        Raises:
+            APIStatusError: 重试耗尽后仍失败时抛出（SDK 原生异常，便于上层分流）。
         """
-        resp = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            stream=False,
-            **kwargs,
-        )
-        return self._to_result(resp)
+        return self._to_result(self._with_retry(
+            lambda: self.client.chat.completions.create(
+                model=self.model, messages=messages, stream=False, **kwargs)
+        ))
+
+    def _with_retry(self, call):
+        """429/5xx 指数退避（1s → 2s → 4s…）；4xx（鉴权/参数错）不重试。
+
+        注：SDK 自带 max_retries 参数也做这件事，这里手动实现是为了教学可见——
+        第 06 章 ResilientTool 讲的「哪类错可重试」在 API 层一模一样。
+        生产可二选一：设 self.client = OpenAI(..., max_retries=2) 更省事。
+        """
+        import time
+        from openai import APIStatusError
+
+        last: Exception | None = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                return call()
+            except APIStatusError as e:
+                last = e
+                status = getattr(e, "status_code", None)
+                if status not in self.retry_on:
+                    raise                     # 4xx：重试也没用，直接抛
+                if attempt < self.max_retries:
+                    time.sleep(2 ** attempt)  # 1s → 2s → 4s
+        raise last
 
     def stream(self, messages: list[dict], **kwargs) -> Iterator[str]:
         """流式调用，逐块 yield 出文本 delta。
