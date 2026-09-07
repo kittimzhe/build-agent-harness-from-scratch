@@ -4,7 +4,14 @@
   <meta charset="UTF-8">
   <title>从零手写 Agent Harness</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <!-- favicon：内联 SVG，避免 /favicon.ico 404 -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧱</text></svg>">
+  <!--
+    docsify 钉死 4.13.1：全仓库 167 条文件内锚点是按这个版本的 slugify 算法
+    生成并逐条在线上验证过的（数字标题 _ 前缀、连续 - 折叠、：与「」保留）。
+    升级 docsify 前必须复核锚点算法是否变化。
+  -->
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4.13.1/lib/themes/vue.css">
 </head>
 <body>
   <div id="app"></div>
@@ -18,7 +25,7 @@
       auto2top: true,
     };
   </script>
-  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
-  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4.13.1"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4.13.1/lib/plugins/search.min.js"></script>
 </body>
 </html>
