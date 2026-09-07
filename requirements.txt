@@ -3,7 +3,9 @@
 # 需要 FastAPI 冒烟（18 章）时再装 requirements-full.txt
 
 # OpenAI 兼容 SDK（DeepSeek/通义/OpenAI/Ollama 通用）
-openai>=1.50.0
+# 上界钉 <3：openai 3.x 把 HTTP 层换成了 httpx2 分叉，import httpx / 异常构造会变——
+# 升 3.x 前需先回归 tests/（APIStatusError / APIConnectionError / _with_retry 路径）
+openai>=1.50.0,<3
 
 # 环境变量加载（find_dotenv 支持在子目录运行）
 python-dotenv>=1.0.0
