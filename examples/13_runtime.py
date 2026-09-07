@@ -10,7 +10,7 @@
     2. 事件循环 + 钩子：on_event 观察每一步（FakeLLM 一次工具调用后收尾）
     3. 护栏：模型永远要工具 → max_rounds 硬停 → state=error
     4. 对比 LangGraph / OpenAI Agents SDK：mini runtime 在什么位置
-    5. 真实 LLM：把前面九块砖装进一个 MiniAgent（需 API）
+    5. 真实 LLM：一个 MiniAgent 跑通完整循环（需 API）
 """
 
 import os
@@ -129,7 +129,7 @@ def demo_vs_frameworks():
 def demo_real_agent(llm: LLMClient):
     """⑤ 真实 LLM。"""
     print("=" * 60)
-    print("⑤ 真实 LLM：九块砖装进一个 MiniAgent")
+    print("⑤ 真实 LLM：一个 MiniAgent 跑通完整循环")
     print("=" * 60)
     agent = MiniAgent(llm=llm, system="你是乐于助人的助手", tools=[Tool(add)], name="real")
     agent.on(lambda e: print(f"  [事件] {e.type}"))

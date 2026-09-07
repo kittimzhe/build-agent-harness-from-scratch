@@ -71,9 +71,10 @@ class LLMClient:
         if not base_url:
             raise ValueError(f"环境变量 {url_env} 未设置，请检查 .env")
 
-        # 调用层容错（第 06 章原则在 API 层的翻版）：超时 + 429/5xx 指数退避重试。
-        # 默认值从环境变量读，行为可用 LLM_TIMEOUT=0 / LLM_MAX_RETRIES=0 关掉。
-        self.timeout = float(os.getenv("LLM_TIMEOUT", "60"))
+        # 调用层容错（第 06 章原则在 API 层的翻版）：超时 + 429/5xx/连接错 指数退避重试。
+        # LLM_TIMEOUT=0 表示不设超时（SDK 不传该参数）；LLM_MAX_RETRIES=0 关闭重试。
+        _timeout = float(os.getenv("LLM_TIMEOUT", "60"))
+        self.timeout = _timeout if _timeout > 0 else None
         self.max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
         self.retry_on = {429, 500, 502, 503, 504}
 
@@ -88,7 +89,8 @@ class LLMClient:
             **kwargs: 透传给底层 create，如 temperature、max_tokens 等。
 
         Raises:
-            APIStatusError: 重试耗尽后仍失败时抛出（SDK 原生异常，便于上层分流）。
+            APIStatusError / APIConnectionError: 重试耗尽后仍失败时抛出
+            （SDK 原生异常，便于上层分流：4xx 是调用方错，5xx/连接错是基础设施错）。
         """
         return self._to_result(self._with_retry(
             lambda: self.client.chat.completions.create(
@@ -96,26 +98,31 @@ class LLMClient:
         ))
 
     def _with_retry(self, call):
-        """429/5xx 指数退避（1s → 2s → 4s…）；4xx（鉴权/参数错）不重试。
+        """可重试错误（429/5xx/连接错/超时）指数退避（1s → 2s → 4s…）。
 
-        注：SDK 自带 max_retries 参数也做这件事，这里手动实现是为了教学可见——
-        第 06 章 ResilientTool 讲的「哪类错可重试」在 API 层一模一样。
-        生产可二选一：设 self.client = OpenAI(..., max_retries=2) 更省事。
+        - 连接类错误（APIConnectionError，含 APITimeoutError）总是可重试：
+          网络抖动重试一次往往就好了。
+        - 4xx（鉴权/参数错）重试也没用，直接抛。
+        - 注：SDK 自带 max_retries 参数也做这件事，这里手动实现是为了教学可见——
+          第 06 章 ResilientTool 讲的「哪类错可重试」在 API 层一模一样。
+          生产可二选一：设 self.client = OpenAI(..., max_retries=2) 更省事。
         """
         import time
-        from openai import APIStatusError
+        from openai import APIStatusError, APIConnectionError
 
         last: Exception | None = None
         for attempt in range(self.max_retries + 1):
             try:
                 return call()
+            except APIConnectionError as e:    # 网络抖动 / 超时：总是可重试
+                last = e
             except APIStatusError as e:
                 last = e
                 status = getattr(e, "status_code", None)
                 if status not in self.retry_on:
                     raise                     # 4xx：重试也没用，直接抛
-                if attempt < self.max_retries:
-                    time.sleep(2 ** attempt)  # 1s → 2s → 4s
+            if attempt < self.max_retries:
+                time.sleep(2 ** attempt)  # 1s → 2s → 4s
         raise last
 
     def stream(self, messages: list[dict], **kwargs) -> Iterator[str]:

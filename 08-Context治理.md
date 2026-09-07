@@ -140,7 +140,7 @@ lib.fetch("ref-1")   # 需要时才拉全文
 
 ## 6、运行本章案例
 
-demo ①–④ 纯治理层，**无需 `.env`**；demo ⑤ 需要（配置见 [第 01 章环境准备](01-LLM调用与环境准备.md#3、环境准备)）。
+demo ①–④ 纯治理层，**无需 `.env`**；demo ⑤ 需要（配置见 [第 01 章环境准备](01-LLM调用与环境准备.md#_3、环境准备)）。
 
 ```bash
 python examples/08_context_governance.py

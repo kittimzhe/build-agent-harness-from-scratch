@@ -156,3 +156,128 @@ def test_tracer_records_and_metrics():
     m = tr.metrics()
     assert m["rounds"] == 1
     assert len(tr.to_lines()) == 2               # llm.call + llm.return
+
+
+# ---------- 07：structured_chat 自纠序列 / JSON Mode 降级 ----------
+
+from pydantic import BaseModel                              # noqa: E402
+
+from harness.schema import structured_chat                 # noqa: E402
+
+
+class _Num(BaseModel):
+    n: int
+
+
+class _FirstBadThenGood:
+    """第一次输出坏 JSON，第二次给好的——并记下第二次看到的消息序列。"""
+
+    def __init__(self):
+        self.calls = 0
+        self.second_history = None
+
+    def chat(self, messages, **kw):
+        self.calls += 1
+        if self.calls == 1:
+            return LLMResult(content="not json", tool_calls=[])
+        self.second_history = [dict(m) for m in messages]
+        return LLMResult(content='{"n": 42}', tool_calls=[])
+
+
+def test_structured_chat_writes_bad_output_back_as_assistant():
+    """自纠时坏输出必须写回 assistant——模型要能看见自己刚才错在哪。"""
+    llm = _FirstBadThenGood()
+    out = structured_chat(llm, [{"role": "user", "content": "给个数字"}], _Num)
+    assert out.n == 42
+    roles = [m["role"] for m in llm.second_history]
+    assert roles[-2:] == ["assistant", "user"], roles
+    assert "not json" in llm.second_history[-2]["content"]
+
+
+class _NoJsonMode:
+    """模拟 Ollama 等不认 response_format 的 OpenAI 兼容端点。"""
+
+    def __init__(self):
+        self.kwargs_seen = []
+
+    def chat(self, messages, **kw):
+        self.kwargs_seen.append(dict(kw))
+        if "response_format" in kw:
+            raise RuntimeError("unsupported parameter: 'response_format'")
+        return LLMResult(content='{"n": 7}', tool_calls=[])
+
+
+def test_structured_chat_falls_back_when_json_mode_unsupported():
+    """首次带 response_format 报错 → 自动降级为不带该参数重试。"""
+    llm = _NoJsonMode()
+    out = structured_chat(llm, [{"role": "user", "content": "x"}], _Num)
+    assert out.n == 7
+    assert len(llm.kwargs_seen) == 2
+    assert "response_format" in llm.kwargs_seen[0]
+    assert "response_format" not in llm.kwargs_seen[1]
+
+
+# ---------- 01：LLMClient 重试（429/5xx 退避、4xx 不重试、连接错可重试） ----------
+
+import time                                               # noqa: E402
+
+import httpx                                              # noqa: E402
+from openai import APIStatusError, APIConnectionError     # noqa: E402
+
+from harness.llm import LLMClient                         # noqa: E402
+
+
+def _status_err(code):
+    req = httpx.Request("POST", "http://t")
+    return APIStatusError("err", response=httpx.Response(status_code=code, request=req),
+                          body=None)
+
+
+def _conn_err():
+    return APIConnectionError(request=httpx.Request("POST", "http://t"))
+
+
+def _bare_client(retries=2):
+    c = object.__new__(LLMClient)     # 绕过 __init__（无需 .env）
+    c.max_retries, c.retry_on = retries, {429, 500, 502, 503, 504}
+    return c
+
+
+def test_retry_on_429_then_success(monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    n = [0]
+
+    def flaky():
+        n[0] += 1
+        if n[0] <= 2:
+            raise _status_err(429)
+        return "ok"
+
+    assert _bare_client()._with_retry(flaky) == "ok" and n[0] == 3
+
+
+def test_no_retry_on_400(monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    n = [0]
+
+    def once():
+        n[0] += 1
+        raise _status_err(400)
+
+    with pytest.raises(APIStatusError):
+        _bare_client()._with_retry(once)
+    assert n[0] == 1                    # 4xx 重试也没用，一次就抛
+
+
+def test_retry_on_connection_error_then_success(monkeypatch):
+    """网络抖动 / 超时（APIConnectionError）也应可重试。"""
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    n = [0]
+
+    def flaky_net():
+        n[0] += 1
+        if n[0] == 1:
+            raise _conn_err()
+        return "ok"
+
+    assert _bare_client()._with_retry(flaky_net) == "ok" and n[0] == 2

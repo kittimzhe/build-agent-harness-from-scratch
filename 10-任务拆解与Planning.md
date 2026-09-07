@@ -116,7 +116,7 @@ results = execute_plan(plan, executor)   # executor(步骤描述, 序号) -> str
 
 ## 5、运行本章案例
 
-demo ①–④ 无需 `.env`，⑤ 需要（配置见 [第 01 章环境准备](01-LLM调用与环境准备.md#3、环境准备)）：
+demo ①–④ 无需 `.env`，⑤ 需要（配置见 [第 01 章环境准备](01-LLM调用与环境准备.md#_3、环境准备)）：
 
 ```bash
 python examples/10_planning.py

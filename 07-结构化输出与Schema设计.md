@@ -151,7 +151,7 @@ def structured_chat(llm, messages, model_cls, max_retries=2, json_mode=True):
 
 ## 5、运行本章案例
 
-demo ①–③ 纯解析/校验层，**无需 `.env`**；demo ④ 需要（配置见 [第 01 章环境准备](01-LLM调用与环境准备.md#3、环境准备)）。
+demo ①–③ 纯解析/校验层，**无需 `.env`**；demo ④ 需要（配置见 [第 01 章环境准备](01-LLM调用与环境准备.md#_3、环境准备)）。
 
 ```bash
 python examples/07_structured_output.py

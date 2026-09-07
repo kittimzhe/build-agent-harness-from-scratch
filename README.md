@@ -26,7 +26,7 @@
 
 市面上 Agent 教程大多分两类：要么是「调 LangChain/LangGraph 的速成」，要么是「概念名词大集合」。本教程走第三条路 —— **不用任何现成 Agent 框架**，用纯 Python + OpenAI 兼容 SDK（DeepSeek / 通义千问 / Ollama），一步一步把一个 Agent 从「只会聊天」搓到「能调工具、有记忆、会规划、可恢复、可观测、可部署」。
 
-读者跟着敲完代码，等于亲手实现了一个 **mini Agent Harness / Runtime**。最后一章我们会把它封装成一个可复用的内核，让你彻底看懂：那些成熟框架到底替你做了什么、什么时候该自己写、什么时候该用框架。
+读者跟着敲完代码，等于亲手实现了一个 **mini Agent Harness / Runtime**。第 13 章给循环穿上可复用的运行时外壳，第 17 章把它拼成实战项目、第 18 章部署成可 `curl` 的服务，让你彻底看懂：那些成熟框架到底替你做了什么、什么时候该自己写、什么时候该用框架。
 
 **这不是又一份「Agent 是什么」的概念贴，而是一条「从 Prompt 到 Runtime」的可执行工程主线。**
 
@@ -65,7 +65,7 @@
 | **Agent 核心** | **自己手写** | Tool Loop、Context 治理、State、Checkpoint、Trace 全部从零实现 |
 | **协议** | MCP / A2A / Skills | 第 16 章接入，理解协议层为何成基础设施 |
 | **记忆体系** | 文件/会话记忆 vs 向量记忆 | 主线讲取舍；手写最简向量库作教具/附录，再讲何时该上 Qdrant/Redis |
-| **可观测** | 自打 Trace + Langfuse | 第 14 章从零做观测 |
+| **可观测** | 自打 Trace（jsonl 落盘，零外部依赖） | 第 14 章从零做观测；Langfuse 只是参考索引里的可选项 |
 | **部署** | FastAPI + Docker | 第 18 章从 demo 到可交付 |
 | **评测** | 自建最小回归集（pytest，无需 API） | `tests/test_minimal_regression.py`，CI 每次推送自动跑 |
 
@@ -133,7 +133,7 @@
 
    - 把根目录 `.env-example` 复制为 `.env`
    - 填入你的 API Key（推荐 DeepSeek 或通义千问，国内便宜稳定）
-   - 不想用云 API？可改用 [Ollama 本地模型](新手入门与常见问题.md#用-ollama-免-key-跑通)（无需 Key）
+   - 不想用云 API？可改用 [Ollama 本地模型](新手入门与常见问题.md#_3、用-ollama-免-key-跑通)（无需 Key）
 
 4. **跑通第一个案例**
 
