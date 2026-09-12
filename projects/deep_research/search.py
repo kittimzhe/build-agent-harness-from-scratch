@@ -70,4 +70,10 @@ def make_search_tool(engine: FakeSearchEngine | None = None) -> Tool:
             return "（无相关结果）"
         return "\n".join(f"{i + 1}. {r}" for i, r in enumerate(results))
 
-    return Tool(search, name="search", description="搜索一个关键词，返回相关片段")
+    return Tool(search, name="search", description="搜索一个关键词，返回相关片段",
+                parameters={
+                    "type": "object",
+                    "properties": {"query": {"type": "string",
+                                             "description": "要搜索的关键词"}},
+                    "required": ["query"],   # 不写 required，真模型可能传 {} 上来
+                })

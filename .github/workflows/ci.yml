@@ -1,7 +1,7 @@
 name: Offline demos (no API key)
 
 # 全部章节的离线路径在 CI 里机器守门：
-# examples/06–16（FakeLLM/ScriptedLLM）+ 17 实战项目离线全流程
+# examples/05–16（05 起用确定性替身，无需 API）+ 17 实战项目离线全流程
 # + 18 FastAPI 离线冒烟 + 附录最小回归（pytest）。
 # 不需要任何 API Key——这正是「离线替身」设计的回报。
 
@@ -35,7 +35,7 @@ jobs:
       - name: Run offline demos 06-16
         run: |
           set -e
-          for f in examples/0[6-9]_*.py examples/1[0-6]_*.py; do
+          for f in examples/0[5-9]_*.py examples/1[0-6]_*.py; do
             echo "::group::$f"
             python "$f" > /dev/null
             echo "::endgroup::"
