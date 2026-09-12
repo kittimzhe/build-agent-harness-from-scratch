@@ -86,6 +86,9 @@ def resume_demo(workdir=".deep_research_demo"):
     statuses = [f"[{s.status}]" for s in result["plan"].steps]
     print("  恢复后的步骤状态：", " ".join(statuses))
     print("  （全部 done —— checkpoint 让新进程零重跑）")
+    ctx = result["context"]
+    assert "未检索到资料" not in ctx, "续跑后上下文为空——检索记忆没恢复！"
+    print(f"  综合上下文 {len(ctx)} 字符（检索记忆已随 checkpoint 恢复，非空 ✓）")
     print("  最后一条 trace 事件 final_state =",
           result["metrics"]["final_state"])
     print()

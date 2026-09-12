@@ -46,6 +46,8 @@ POST /research      # body {question, plan?, max_steps} → {report, final_state
 
 `_build_agent(workdir)` 是唯一的分叉点：`DEEP_RESEARCH_OFFLINE=1` 时用 `ScriptedLLM` + `FakeSearchEngine` 冒烟（无外部依赖），否则 `LLMClient()` 真实研究。`workdir` 由 `_workdir_for()` 决定：新请求拿 `base/req-<uuid>` 新目录，带 `checkpoint_id` 的请求复用旧目录并 `resume=True`。
 
+`checkpoint_id` **只接受本服务自己发的格式 `req-<12 位十六进制>`，其余一律 400**。为什么这么严？你可能会想「`os.path.basename` 去掉斜杠不就行了」——但 `basename('..')` 的结果就是 `'..'`，`os.path.join(base, '..')` 直接写到父目录；`'.'` 会让多个请求串进同一目录。对外暴露的标识符要用**白名单**校验，再做一道 `realpath` 必须落在 `base` 之内的双保险——这是所有「用户输入拼路径」场景的通例。
+
 > 为什么端点这么少？因为**复杂在 agent 内部（前 17 章），不在接口**。接口只负责「收问题、回报告」，剩下的交给 `DeepResearchAgent.research()`。
 
 ---
@@ -143,6 +145,7 @@ docker run --rm -p 8000:8000 --env-file .env deep-research-agent
 | `docker build` 卡在 pip | 网络 / 源慢 | 换 pip 源：`RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple ...` |
 | 容器里 `/research` 返回离线报告 | `DEEP_RESEARCH_OFFLINE=1` 带进去了 | 去掉该环境变量 / 用 `--env-file .env` |
 | 两个用户报告串味 | 共享了进程单例**或共享 workdir** | 每请求独立 workdir（`req-<uuid>`）；续跑显式带 `checkpoint_id` |
+| `checkpoint_id` 传 `..` / `.` | 旧版只 `basename`，挡不住 `..`（写到父目录）和 `.`（串目录） | 白名单 `req-[0-9a-f]{12}` + `realpath` 落在 base 内，否则 400 |
 
 更多见 [新手入门与常见问题](新手入门与常见问题.md)。
 

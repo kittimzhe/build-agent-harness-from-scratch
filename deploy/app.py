@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 from typing import Optional
 
@@ -30,7 +31,7 @@ sys.path.insert(0, ROOT)
 from dotenv import load_dotenv, find_dotenv                # noqa: E402
 load_dotenv(find_dotenv(usecwd=True))
 
-from fastapi import FastAPI                                # noqa: E402
+from fastapi import FastAPI, HTTPException                    # noqa: E402
 from pydantic import BaseModel, Field                      # noqa: E402
 
 from harness import LLMClient, ScriptedLLM, LLMResult      # noqa: E402
@@ -73,19 +74,31 @@ def _build_agent(workdir: str) -> DeepResearchAgent:
     return DeepResearchAgent(llm=LLMClient(), workdir=workdir)
 
 
+_REQ_ID_RE = re.compile(r"req-[0-9a-f]{12}")
+
+
 def _workdir_for(checkpoint_id: Optional[str]) -> str:
     """无 checkpoint_id → 新建 base/req-<uuid>；有 → 复用该目录（断点续跑）。
 
     每请求独立目录：并发请求互不覆盖 checkpoint/notes/trace（「无状态」落在文件层）。
+    续跑 id 只接受本服务自己发的格式 req-<12 位十六进制>：basename('..') 仍是 '..'，
+    单靠 basename 挡不住路径穿越（'.' 还会让多请求串进同一目录）——所以白名单 + realpath 双保险。
     """
     import uuid
     base = os.getenv("WORKDIR_BASE", ".deep_research")
     if checkpoint_id:
-        # 只允许复用本 base 下的目录名，防路径穿越
-        safe = os.path.basename(checkpoint_id)
-        d = os.path.join(base, safe)
+        if not _REQ_ID_RE.fullmatch(checkpoint_id):
+            raise HTTPException(
+                status_code=400,
+                detail="checkpoint_id 格式非法：只接受本服务返回的 req-<12位十六进制>",
+            )
+        d = os.path.join(base, checkpoint_id)
     else:
         d = os.path.join(base, f"req-{uuid.uuid4().hex[:12]}")
+    os.makedirs(base, exist_ok=True)
+    # 双保险：解析后的真实路径必须仍在 base 之内（防任何形式的穿越/软链）
+    if not os.path.realpath(d).startswith(os.path.realpath(base) + os.sep):
+        raise HTTPException(status_code=400, detail="checkpoint_id 指向了工作目录之外")
     os.makedirs(d, exist_ok=True)
     return d
 

@@ -40,6 +40,12 @@ def main() -> int:
     assert b3["checkpoint_id"] == b1["checkpoint_id"], "续跑没复用目录！"
     print(f"✅ checkpoint_id 续跑复用目录：{b3['checkpoint_id']}")
 
+    # 路径穿越/格式非法：一律 400（basename('..') 仍是 '..'，白名单才挡得住）
+    for bad in ["..", ".", "../etc", "req-ZZZZabcdefgh", "req-abc", "/etc/passwd"]:
+        r = c.post("/research", json={"question": "x", "checkpoint_id": bad})
+        assert r.status_code == 400, f"{bad!r} 应被拒绝，实际 {r.status_code}"
+    print("✅ 非法 checkpoint_id（.. / . / 穿越 / 格式错）全部 400")
+
     print("\n离线冒烟全部通过。")
     return 0
 

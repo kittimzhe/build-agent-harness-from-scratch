@@ -82,8 +82,29 @@ class DeepResearchAgent:
             trail = f"（空结果→改词重搜：{alt}）"
         note = f"{desc}\n{text}{trail}"
         self.notes.remember(f"step{idx}", note)            # 09：文件记忆
+        self.notes.save()                                  # 每步落盘：崩溃后笔记不丢（12 的 at-least-once 精神）
         self.vec.add(note, meta={"step": desc, "idx": idx})  # 09：向量记忆（meta 用 dict）
         return text
+
+    def _restore_memory(self, plan) -> int:
+        """续跑时重建检索记忆：VectorMemory 是内存态，新进程里是空的。
+
+        崩溃前已 done 的步骤，其笔记在 notes.json（_research_step 每步落盘），
+        步骤结果也在 checkpoint 里。这里把两者灌回向量记忆，否则综合阶段
+        只能拿到「(未检索到资料)」——checkpoint 恢复的不该只有步骤状态。
+        返回重建的条数。
+        """
+        restored = 0
+        for i, step in enumerate(plan.steps):
+            if step.status != "done":
+                continue
+            note = self.notes.recall(f"step{i}")
+            if note is None:
+                note = step.result or step.description   # 兜底：老版本没同步 notes
+            if note:
+                self.vec.add(note, meta={"step": step.description, "idx": i})
+                restored += 1
+        return restored
 
     # ------------------------------------------------------------------ #
     # Phase 3：综合（08/09/10）
@@ -114,6 +135,8 @@ class DeepResearchAgent:
         if resume and os.path.exists(self.checkpoint_path):
             from harness import load_checkpoint
             p = load_checkpoint(self.checkpoint_path)
+            restored = self._restore_memory(p)              # 检索记忆也要恢复，不只步骤状态
+            self.tracer.record("memory.restored", notes=restored)  # 14：恢复量进 trace
         else:
             p = self._plan(question, max_steps=max_steps, plan=plan)
 
@@ -140,6 +163,7 @@ class DeepResearchAgent:
         self.notes.save()                         # 09：长期记忆
         return {
             "report": report,
+            "context": context,          # 综合阶段实际用到的资料（评测/调试可查）
             "plan": p,
             "metrics": self.tracer.metrics(),
             "checkpoint": self.checkpoint_path,
