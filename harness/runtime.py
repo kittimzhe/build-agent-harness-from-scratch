@@ -56,12 +56,19 @@ class MiniAgent:
 
     def __init__(self, llm: LLMClient | None = None, system: str | None = None,
                  tools: list[Tool] | None = None, max_rounds: int = 8,
-                 name: str = "agent", on_event: Callable[[RuntimeEvent], None] | None = None):
+                 name: str = "agent", on_event: Callable[[RuntimeEvent], None] | None = None,
+                 limits: "StopConditions | None" = None, tracer: "Tracer | None" = None):
         self.llm = llm or LLMClient()
         self.name = name
         self.system = system
         self.tools: dict[str, Tool] = {t.name: t for t in (tools or [])}
         self.max_rounds = max_rounds
+        # 15：可选手动注入终止条件（检查器）。注意「检查器 ≠ 已挂上的护栏」——
+        # 没人调用的 StopConditions 不保护任何东西；注入后 MiniAgent 会在两处用它：
+        # 轮数对齐（传给 AgentLoop 的 max_rounds）+ 收尾查输出预算
+        self.limits = limits
+        # 14：可选接入 Tracer——工具执行会记 tool.start / tool.return
+        self.tracer = tracer
         self.hooks: list[Callable[[RuntimeEvent], None]] = [on_event] if on_event else []
         self.state = AgentState.NEW
         self.events: list[RuntimeEvent] = []
@@ -97,7 +104,10 @@ class MiniAgent:
         self._transition(AgentState.RUNNING)
         self._emit("start", input=user_input)
 
-        loop = AgentLoop(llm=self.llm, tools=list(self.tools.values()), max_rounds=self.max_rounds)
+        loop = AgentLoop(llm=self.llm, tools=list(self.tools.values()),
+                         max_rounds=self.limits.max_rounds if self.limits is not None
+                         else self.max_rounds,
+                         tracer=self.tracer)
         try:
             out = loop.run(user_input, system or self.system)
         except Exception as e:  # noqa: BLE001 —— 任何崩都不该穿出 runtime，记成 error 事件
@@ -108,6 +118,13 @@ class MiniAgent:
         if out["stopped_by"] == "model":
             self._transition(AgentState.DONE)
             self._emit("finish", reply=out["reply"], rounds=out["rounds"])
+            # 15：注入了 limits 才有这道收尾检查（输出预算 / 停止短语）
+            if self.limits is not None:
+                reason = self.limits.check_output(out["reply"] or "")
+                if reason:
+                    self._emit("guardrail", reason=reason, rounds=out["rounds"])
+                    out = {**out,
+                           "reply": f"{out['reply']}\n（⚠️ 触发终止条件：{reason}）"}
         else:  # max_rounds 护栏硬停
             self._transition(AgentState.ERROR)
             self._emit("error", error=f"护栏终止（stopped_by={out['stopped_by']}）",

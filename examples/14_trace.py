@@ -60,7 +60,8 @@ def add(a: float, b: float) -> float:
 def make_traced_agent(llm):
     tracer = Tracer(wrap=llm, name="calc")
     agent = MiniAgent(llm=tracer.llm, system="你是计算器",
-                      tools=[Tool(add)], name="calc", max_rounds=8)
+                      tools=[Tool(add)], name="calc", max_rounds=8,
+                      tracer=tracer)   # 工具执行也进 trace：tool.start / tool.return
     agent.on(tracer.on_event)
     return agent, tracer
 

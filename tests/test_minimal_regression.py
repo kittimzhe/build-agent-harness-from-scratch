@@ -281,3 +281,110 @@ def test_retry_on_connection_error_then_success(monkeypatch):
         return "ok"
 
     assert _bare_client()._with_retry(flaky_net) == "ok" and n[0] == 2
+
+
+# =====================================================================
+# 审阅批次 3：schema 推断 / 工具事件进 trace / StopConditions 注入
+# =====================================================================
+
+def test_tool_infers_schema_from_signature():
+    """Tool 不写 parameters：从类型签名推断——漏写 required 是真模型传 {} 的头号原因。"""
+    from harness.loop import Tool
+
+    def add(a: float, b: float) -> float:
+        """两数相加"""
+        return a + b
+
+    s = Tool(add).schema()["function"]["parameters"]
+    assert s["properties"] == {"a": {"type": "number"}, "b": {"type": "number"}}
+    assert sorted(s["required"]) == ["a", "b"]
+
+    def get_time() -> str:
+        """当前时间"""
+        return "12:00"
+
+    s2 = Tool(get_time).schema()["function"]["parameters"]
+    assert s2["properties"] == {} and s2["required"] == []
+
+    def greet(name: str, times: int = 1) -> str:
+        """打招呼"""
+        return name * times
+
+    s3 = Tool(greet).schema()["function"]["parameters"]
+    assert s3["required"] == ["name"]          # 有默认值的参数不 required
+    assert s3["properties"]["times"] == {"type": "integer"}
+
+    # 手写优先于推断（写了更严：可以加 description / enum）
+    s4 = Tool(add, parameters={"type": "object", "properties": {
+        "a": {"type": "number", "description": "第一个加数"}}, "required": ["a"]
+    }).schema()["function"]["parameters"]
+    assert s4["required"] == ["a"]
+
+
+def test_agent_loop_records_tool_events():
+    """AgentLoop 接 tracer：trace 里能看到工具名 / 参数 / 返回（对上 Observation）。"""
+    from harness import AgentLoop, Tool, Tracer, LLMResult
+
+    class OneToolLLM:
+        def chat(self, messages, **kw):
+            if messages and messages[-1].get("role") == "tool":
+                return LLMResult(content="3", tool_calls=[])
+            return LLMResult(content=None, tool_calls=[{
+                "id": "c1", "type": "function",
+                "function": {"name": "add", "arguments": '{"a": 1, "b": 2}'},
+            }])
+
+    def add(a: float, b: float) -> float:
+        """两数相加"""
+        return a + b
+
+    tracer = Tracer(wrap=OneToolLLM(), name="t")
+    out = AgentLoop(tracer.llm, tools=[Tool(add)], max_rounds=4, tracer=tracer).run("1+2")
+    assert out["reply"] == "3"
+
+    types = [e.type for e in tracer.events]
+    assert "tool.start" in types and "tool.return" in types
+    ts = next(e for e in tracer.events if e.type == "tool.start")
+    tr = next(e for e in tracer.events if e.type == "tool.return")
+    assert ts.payload["tool"] == "add" and ts.payload["args"] == {"a": 1, "b": 2}
+    assert tr.payload["tool"] == "add" and tr.payload["output"] == "3"
+
+    # 不接 tracer：行为完全不变（只加能力，不改默认路径）
+    out2 = AgentLoop(OneToolLLM(), tools=[Tool(add)], max_rounds=4).run("1+2")
+    assert out2["reply"] == "3"
+
+
+def test_miniagent_stop_conditions_injection():
+    """MiniAgent 注入 limits：输出超预算 → guardrail 事件 + 回复带 ⚠️；不注入则不查。"""
+    from harness import MiniAgent, Tool, StopConditions, LLMResult
+
+    class LongLLM:
+        def chat(self, messages, **kw):
+            return LLMResult(content="这是一段很长很长的回答" * 5, tool_calls=[])
+
+    agent = MiniAgent(LongLLM(), limits=StopConditions(max_output_chars=20))
+    out = agent.run("写点东西")
+    assert "⚠️ 触发终止条件" in out["reply"] and "输出超过" in out["reply"]
+    assert any(e.type == "guardrail" for e in agent.events)
+
+    # 轮数对齐：limits.max_rounds 接管 AgentLoop 的护栏
+    class EndlessLLM:
+        def chat(self, messages, **kw):
+            return LLMResult(content=None, tool_calls=[{
+                "id": "c", "type": "function",
+                "function": {"name": "add", "arguments": '{"a": 1, "b": 2}'},
+            }])
+
+    def add(a: float, b: float) -> float:
+        """两数相加"""
+        return a + b
+
+    a2 = MiniAgent(EndlessLLM(), tools=[Tool(add)],
+                   limits=StopConditions(max_rounds=2))
+    out2 = a2.run("算")
+    assert out2["stopped_by"] == "max_rounds" and out2["rounds"] == 2
+
+    # 不注入：一切如旧
+    a3 = MiniAgent(LongLLM())
+    out3 = a3.run("写点东西")
+    assert "⚠️" not in out3["reply"]

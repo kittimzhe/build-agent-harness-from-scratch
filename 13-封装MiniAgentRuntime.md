@@ -49,6 +49,8 @@ print(agent.state, agent.events)        # 状态与全程事件都可取到
 | 状态机 | 显式标出「现在到哪了」 | 05（循环）/ 12（状态） |
 | 事件循环 | 一圈状态机，内部委托 `AgentLoop` 和模型过招 | 05 |
 | 钩子 | 每一步都可被上层观察 | 为 14（trace）铺路 |
+| `tracer=`（可选） | 工具执行记 `tool.start` / `tool.return` 进 trace.jsonl | 14 章的观测接线点 |
+| `limits=`（可选） | 注入 `StopConditions`：轮数对齐 + 收尾查输出预算 | 15 章的护栏接线点 |
 
 ---
 

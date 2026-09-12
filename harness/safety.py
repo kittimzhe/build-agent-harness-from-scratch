@@ -45,6 +45,15 @@ class StopConditions:
         """要停返回原因，不停返回 None。"""
         if rounds >= self.max_rounds:
             return f"超过 max_rounds={self.max_rounds}"
+        return self.check_output(output_text)
+
+    def check_output(self, output_text: str) -> str | None:
+        """只查输出类条件（字符预算 / 停止短语）。
+
+        轮数类条件由循环里的护栏（AgentLoop.max_rounds）实时执行；
+        这个方法给「拿到成品再查」的场景用——比如 MiniAgent 注入 limits
+        后在收尾时查输出预算。
+        """
         if self.max_output_chars is not None and len(output_text) > self.max_output_chars:
             return f"输出超过 {self.max_output_chars} 字符"
         for p in self.stop_phrases:

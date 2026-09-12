@@ -72,13 +72,20 @@ class DeepResearchAgent:
         tokens = [t for t in _tokens(desc) if t not in stop and len(t) >= 2]
         return " ".join(tokens[:4]) if tokens else desc
 
+    def _search(self, query: str) -> str:
+        """带 trace 的检索：工具名 / 参数 / 返回都进 trace.jsonl（14）。"""
+        self.tracer.record("tool.start", tool="search", args={"query": query})
+        out = self.search_tool.run(query=query)
+        self.tracer.record("tool.return", tool="search", output=str(out)[:500])
+        return out
+
     def _research_step(self, desc: str, idx: int) -> str:
         """一步研究：搜索 → （空结果则改词再搜）→ 记笔记 + 存向量。"""
-        text = self.search_tool.run(query=desc)
+        text = self._search(desc)
         trail = ""
         if text.strip() == "（无相关结果）":
             alt = self._reformulate(desc)                  # 11：失败换思路（确定性简化）
-            text = self.search_tool.run(query=alt)
+            text = self._search(alt)
             trail = f"（空结果→改词重搜：{alt}）"
         note = f"{desc}\n{text}{trail}"
         self.notes.remember(f"step{idx}", note)            # 09：文件记忆

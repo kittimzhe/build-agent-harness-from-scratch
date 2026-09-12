@@ -19,18 +19,42 @@ import json
 from harness.llm import LLMClient, LLMResult
 
 
+def _infer_schema(func) -> dict:
+    """从函数签名 + 类型注解推断 JSON Schema。
+
+    这正是框架替你做的事之一：函数写好了，schema 不该再手抄一遍。
+    规则（教学版，够用且可读）：
+    - str/int/float/bool 注解 → string/integer/number/boolean；其余一律 string
+    - 没有默认值的参数 → required（漏写 required 是真模型传 {} 上来的头号原因）
+    - *args / **kwargs 不进 schema
+    """
+    import inspect
+    type_map = {str: "string", int: "integer", float: "number", bool: "boolean"}
+    props: dict = {}
+    required: list = []
+    for pname, p in inspect.signature(func).parameters.items():
+        if p.kind in (p.VAR_POSITIONAL, p.VAR_KEYWORD):
+            continue
+        props[pname] = {"type": type_map.get(p.annotation, "string")}
+        if p.default is inspect.Parameter.empty:
+            required.append(pname)
+    return {"type": "object", "properties": props, "required": required}
+
+
 class Tool:
     """把一个普通 Python 函数包装成模型可调用的工具。
 
-    用法：
+    用法（parameters 可省——不写就从类型签名推断；写了以你写的为准）：
         def add(a: float, b: float) -> float:
             \"\"\"两数相加\"\"\"
             return a + b
 
-        tool = Tool(add, parameters={
+        tool = Tool(add)            # schema 自动推断：a/b 是 number，且都 required
+        tool = Tool(add, parameters={   # 也可以手写更严格的（加描述、枚举……）
             "type": "object",
             "properties": {
-                "a": {"type": "number"}, "b": {"type": "number"},
+                "a": {"type": "number", "description": "第一个加数"},
+                "b": {"type": "number", "description": "第二个加数"},
             },
             "required": ["a", "b"],
         })
@@ -41,8 +65,8 @@ class Tool:
         self.func = func
         self.name = name or func.__name__
         self.description = description or (func.__doc__ or "").strip()
-        # parameters 是 JSON Schema；怎么设计好它，第 04 章展开
-        self.parameters = parameters or {"type": "object", "properties": {}}
+        # parameters 是 JSON Schema：不写 → 从签名推断（不写也能跑，写了更严）
+        self.parameters = parameters or _infer_schema(func)
 
     def schema(self) -> dict:
         """给模型看的工具说明书（OpenAI Function Calling 格式）。"""
@@ -70,10 +94,13 @@ class AgentLoop:
     """
 
     def __init__(self, llm: LLMClient | None = None,
-                 tools: list[Tool] | None = None, max_rounds: int = 8):
+                 tools: list[Tool] | None = None, max_rounds: int = 8,
+                 tracer: "Tracer | None" = None):
         self.llm = llm or LLMClient()
         self.tools: dict[str, Tool] = {t.name: t for t in (tools or [])}
         self.max_rounds = max_rounds
+        # 14：可选接入 Tracer——工具的每次执行都会记 tool.start / tool.return
+        self.tracer = tracer
 
     def run(self, user_input: str, system: str | None = None) -> dict:
         """跑一次任务，返回 {reply, rounds, messages, stopped_by}。
@@ -136,10 +163,19 @@ class AgentLoop:
             if tool is None:
                 output = f"没有叫 {name!r} 的工具，可选：{list(self.tools)}"
             else:
+                # 14：工具是谁、什么参数、返回什么——trace 里要能对上 Observation
+                if self.tracer is not None:
+                    self.tracer.record("tool.start", tool=name, args=args)
                 try:
                     output = str(tool.run(**args))
                 except Exception as e:  # noqa: BLE001 —— 工具异常要回喂模型
+                    if self.tracer is not None:
+                        self.tracer.record("tool.error", tool=name, error=str(e))
                     output = f"工具执行出错：{e}"
+                else:
+                    if self.tracer is not None:
+                        self.tracer.record("tool.return", tool=name,
+                                           output=output[:500])   # 防 trace 被巨型结果撑爆
         return {
             "role": "tool",
             "tool_call_id": tc["id"],

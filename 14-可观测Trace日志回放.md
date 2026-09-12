@@ -38,8 +38,9 @@
 
 1. **包装 llm**：`Tracer(wrap=llm)` 返回一个 `tracer.llm`，它的 `chat()` 在调用前后各记一条事件（`llm.call` / `llm.return`）——每调一次 chat 就是一轮，结果里 `tool_calls` 的个数就是这一轮要了几次工具。
 2. **挂 MiniAgent 钩子**：`agent.on(tracer.on_event)`，把 `start/finish/error` 收成 `run.*` 事件。
+3. **给 AgentLoop 传 `tracer`**（可选）：工具**真正执行**的地方也发事件——`tool.start`（工具名 + 参数）与 `tool.return`（返回值，超长截断）。没有这两条，trace 里只有「模型要了几次工具」的计数，看不到**工具是谁、参数是什么、返回了什么**——回放时对不上 Observation。
 
-于是「状态（run.*）+ 计算（llm.*）」拼成一条完整时间线，`AgentLoop.run` 一个字没改。
+于是「状态（run.*）+ 计算（llm.*）+ 行动（tool.*）」拼成一条完整时间线，`AgentLoop.run` 的公开签名一个字没改（`tracer` 是可选参数，不传就是原来的行为）。
 
 > 这正是不改内核实现在做扩展的姿势：**能力走包装，不走侵入**。第 15 章的权限、第 16 章的协议，还会再用这招。
 
@@ -80,6 +81,7 @@ Langfuse 的 SDK 本质也是 span 记录（`trace → generation/span`）。我
 - `run.start/finish` → trace 的起止
 - `llm.call/return` → generation span（模型调用 + 耗时 + 输出）
 - `tool_calls` 计数 → span 的 metadata
+- `tool.start` / `tool.return` → 工具 span 的 input / output（工具名就是 span 名）
 
 **hook 已经在了**（`on_event` / `record`），剩下的只是「记到哪」——换成 Langfuse SDK 的 callback 是同一思路。本章不引外部依赖，先把「该记什么」立住。
 
@@ -100,12 +102,14 @@ python examples/14_trace.py
   {"seq": 0, "ts": 0.0, "type": "run.start", "payload": {...}}
   {"seq": 1, "ts": 0.012, "type": "llm.call", "payload": {"n_messages": 2, ...}}
   {"seq": 2, "ts": 0.014, "type": "llm.return", "payload": {"ms": 1.2, "tool_calls": 1, ...}}
-  {"seq": 3, "ts": 0.015, "type": "llm.call", "payload": {...}}
-  {"seq": 4, "ts": 0.016, "type": "llm.return", "payload": {"ms": 0.8, "tool_calls": 0, ...}}
-  {"seq": 5, "ts": 0.017, "type": "run.finish", "payload": {...}}
+  {"seq": 3, "ts": 0.015, "type": "tool.start", "payload": {"tool": "add", "args": {"a": 1, "b": 2}}}
+  {"seq": 4, "ts": 0.015, "type": "tool.return", "payload": {"tool": "add", "output": "3"}}
+  {"seq": 5, "ts": 0.016, "type": "llm.call", "payload": {...}}
+  {"seq": 6, "ts": 0.017, "type": "llm.return", "payload": {"ms": 0.8, "tool_calls": 0, ...}}
+  {"seq": 7, "ts": 0.018, "type": "run.finish", "payload": {...}}
 
 ② metric：从事件聚合出这单的健康指标
-  events=6  rounds=2  tool_calls=1
+  events=8  rounds=2  tool_calls=1
   duration_ms=…  final_state=done
 
 ③ trace：时间线
@@ -113,6 +117,8 @@ python examples/14_trace.py
     + 0.000s [00] ▸ run.start
     + 0.012s [01] → llm.call n_messages=2
     + 0.014s [02] ← llm.return tool_calls=1 ms=…
+    + 0.015s [03] · tool.start
+    + 0.015s [04] · tool.return
     …
 
 ④ replay：把录下的 LLM 响应序列，用 ScriptedLLM 离线重放
