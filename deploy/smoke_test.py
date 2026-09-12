@@ -40,6 +40,14 @@ def main() -> int:
     assert b3["checkpoint_id"] == b1["checkpoint_id"], "续跑没复用目录！"
     print(f"✅ checkpoint_id 续跑复用目录：{b3['checkpoint_id']}")
 
+    # 超时路径：RESEARCH_TIMEOUT 极小 → 504（且 checkpoint 已落盘可续跑）
+    os.environ["RESEARCH_TIMEOUT"] = "0.0001"
+    r = c.post("/research", json={"question": "x"})
+    assert r.status_code == 504, f"超时应 504，实际 {r.status_code}"
+    assert "checkpoint_id" in r.json()["detail"] or "续跑" in r.json()["detail"]
+    print("✅ /research 超时 → 504（detail 提示可续跑）")
+    del os.environ["RESEARCH_TIMEOUT"]
+
     # 路径穿越/格式非法：一律 400（basename('..') 仍是 '..'，白名单才挡得住）
     for bad in ["..", ".", "../etc", "req-ZZZZabcdefgh", "req-abc", "/etc/passwd"]:
         r = c.post("/research", json={"question": "x", "checkpoint_id": bad})

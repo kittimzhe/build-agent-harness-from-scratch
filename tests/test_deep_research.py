@@ -68,3 +68,29 @@ def test_fresh_run_context_non_empty(tmp_path):
     """正常跑（不崩溃）：上下文同样非空——这是续跑断言的基线。"""
     result = _agent(tmp_path / "wd").research("q", plan=PLAN)
     assert "未检索到资料" not in result["context"]
+
+
+def test_offline_report_eval(tmp_path):
+    """最小评测（eval）：离线报告的三条硬指标。
+
+    评测和测试的区别：测试问「代码对不对」，评测问「产出好不好」。
+    这三条锁的是 demo 的对外承诺——哪天语料/脚本/管线改坏了
+    （报告丢主题、开始编造出处），这里会红。
+    """
+    from projects.deep_research.main import OFFLINE_REPORT
+
+    agent = DeepResearchAgent(
+        llm=ScriptedLLM([LLMResult(content=OFFLINE_REPORT, tool_calls=[])]),
+        engine=FakeSearchEngine(),
+        workdir=str(tmp_path / "wd"),
+    )
+    result = agent.research("LangGraph 和 MCP 有什么关系？", plan=PLAN)
+
+    report, ctx = result["report"], result["context"]
+    # ① 主题覆盖：两个都讲了（评测最基本的一条：答没答到点上）
+    assert "LangGraph" in report and "MCP" in report
+    # ② 证据在位：报告的两节确实有语料支撑（context 里有对应内容）
+    assert "图式" in ctx or "编排" in ctx
+    assert "Model Context Protocol" in ctx
+    # ③ 不编造出处：语料里没有任何 URL，报告也不该凭空出现
+    assert "http" not in report, "离线语料无 URL——报告里出现 http 即为编造出处"

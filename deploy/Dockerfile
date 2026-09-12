@@ -15,11 +15,18 @@ WORKDIR /app
 COPY requirements.txt requirements-full.txt ./
 RUN pip install --no-cache-dir -r requirements-full.txt
 
+# 非 root 运行：容器里的服务进程不该有 root 权限——一旦被攻破
+# （恶意 prompt → 工具执行漏洞），拿到的是普通用户，而不是能写全镜像的 root
+RUN useradd --create-home --uid 1000 appuser \
+    && chown appuser:appuser /app     # WORKDIR 归 root，应用要往里写 .deep_research/
+
 # 代码层（只 COPY 服务真正需要的目录，.env 不进镜像、运行时注入）
-COPY harness ./harness
-COPY projects ./projects
-COPY deploy ./deploy
-COPY .env-example ./.env-example
+COPY --chown=appuser:appuser harness ./harness
+COPY --chown=appuser:appuser projects ./projects
+COPY --chown=appuser:appuser deploy ./deploy
+COPY --chown=appuser:appuser .env-example ./.env-example
+
+USER appuser
 
 EXPOSE 8000
 

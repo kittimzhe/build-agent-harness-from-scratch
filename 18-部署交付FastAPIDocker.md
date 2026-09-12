@@ -48,26 +48,33 @@ POST /research      # body {question, plan?, max_steps} → {report, final_state
 
 `checkpoint_id` **只接受本服务自己发的格式 `req-<12 位十六进制>`，其余一律 400**。为什么这么严？你可能会想「`os.path.basename` 去掉斜杠不就行了」——但 `basename('..')` 的结果就是 `'..'`，`os.path.join(base, '..')` 直接写到父目录；`'.'` 会让多个请求串进同一目录。对外暴露的标识符要用**白名单**校验，再做一道 `realpath` 必须落在 `base` 之内的双保险——这是所有「用户输入拼路径」场景的通例。
 
+`/research` 还有**整单墙钟预算**：`RESEARCH_TIMEOUT` 秒（默认 120，`0` = 不限），在阶段之间检查——规划后、每步检索前、综合前。超时返回 **504**，但进度已落盘：客户端带着 `checkpoint_id` 重发即可续跑，前面检索过的步骤不重烧。注意墙钟拦不住「正在飞行」的单次 LLM 调用，那由 `LLM_TIMEOUT`（第 01 章）兜底——两层超时，一层管单次调用、一层管整单任务。
+
 > 为什么端点这么少？因为**复杂在 agent 内部（前 17 章），不在接口**。接口只负责「收问题、回报告」，剩下的交给 `DeepResearchAgent.research()`。
 
 ---
 
-## 4、容器化：Dockerfile 三层
+## 4、容器化：Dockerfile 三层 + 非 root
 
 ```dockerfile
 FROM python:3.11-slim
 WORKDIR /app
 COPY requirements.txt requirements-full.txt ./        # ① 依赖层
 RUN pip install --no-cache-dir -r requirements-full.txt
-COPY harness ./harness                                 # ② 代码层
-COPY projects ./projects
-COPY deploy ./deploy
-COPY .env-example ./.env-example
+RUN useradd --create-home --uid 1000 appuser \
+    && chown appuser:appuser /app                     # 应用要往 WORKDIR 写 .deep_research/
+COPY --chown=appuser:appuser harness ./harness        # ② 代码层
+COPY --chown=appuser:appuser projects ./projects
+COPY --chown=appuser:appuser deploy ./deploy
+COPY --chown=appuser:appuser .env-example ./.env-example
+USER appuser                                          # ③ 权限层：以普通用户跑
 EXPOSE 8000
 CMD ["uvicorn", "deploy.app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-要点：**只 COPY 服务真正需要的目录**（harness / projects / deploy），`.env` 不 COPY（运行时注入）；依赖层放前面，代码改动时能吃到 Docker 层缓存。
+要点：
+- **只 COPY 服务真正需要的目录**（harness / projects / deploy），`.env` 不 COPY（运行时注入）；依赖层放前面，代码改动时能吃到 Docker 层缓存；
+- **非 root 运行**：容器里的服务进程不该有 root 权限——这是一台跑着「会执行工具的 Agent」的机器，一旦被恶意 prompt 打穿（注入 → 工具漏洞），攻击者拿到的是普通用户，而不是能改写整个镜像、挂载宿主文件的 root。`USER appuser` 之前的 `chown /app` 不可省：`WORKDIR` 默认归 root，应用要往里写 `WORKDIR_BASE` 的请求目录。
 
 ---
 
@@ -146,6 +153,8 @@ docker run --rm -p 8000:8000 --env-file .env deep-research-agent
 | 容器里 `/research` 返回离线报告 | `DEEP_RESEARCH_OFFLINE=1` 带进去了 | 去掉该环境变量 / 用 `--env-file .env` |
 | 两个用户报告串味 | 共享了进程单例**或共享 workdir** | 每请求独立 workdir（`req-<uuid>`）；续跑显式带 `checkpoint_id` |
 | `checkpoint_id` 传 `..` / `.` | 旧版只 `basename`，挡不住 `..`（写到父目录）和 `.`（串目录） | 白名单 `req-[0-9a-f]{12}` + `realpath` 落在 base 内，否则 400 |
+| `/research` 频繁 504 | `RESEARCH_TIMEOUT` 太小 / 课题太大步数太多 | 调大预算；或带 `checkpoint_id` 续跑（已检索的步骤不重跑） |
+| 容器起不来：权限错误 | 镜像里 `/app` 归 root，应用写不了 `WORKDIR_BASE` | Dockerfile 里 `chown appuser /app`（见 §4），别用 root 跑服务 |
 
 更多见 [新手入门与常见问题](新手入门与常见问题.md)。
 

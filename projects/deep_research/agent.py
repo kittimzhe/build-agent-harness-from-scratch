@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import os
+import time
 
 from harness import (
     LLMClient, LLMResult, Plan, PlanStep, make_plan, run_plan_with_checkpoint,
@@ -47,6 +48,7 @@ class DeepResearchAgent:
         self.notes = FileMemory(self.notes_path)           # 09：长期记忆（笔记）
         self.vec = VectorMemory()                          # 09：向量记忆（检索去重）
         self.limits = StopConditions(max_rounds=8, max_output_chars=4000)  # 15：护栏
+        self._deadline: float | None = None    # 单次 research 的墙钟预算（跑时设置）
         #                                    ^ 计划步数预算（检索前拦）；max_steps 默认 3，超过 8 步才会截断
 
     # ------------------------------------------------------------------ #
@@ -79,8 +81,14 @@ class DeepResearchAgent:
         self.tracer.record("tool.return", tool="search", output=str(out)[:500])
         return out
 
+    def _check_budget(self, where: str) -> None:
+        """墙钟预算检查（15 的终止条件在编排层的第三种挂法：超时即停，进度可续）。"""
+        if self._deadline is not None and time.monotonic() > self._deadline:
+            raise TimeoutError(f"研究超时（预算耗尽，卡在 {where}）——checkpoint 已保留，可续跑")
+
     def _research_step(self, desc: str, idx: int) -> str:
         """一步研究：搜索 → （空结果则改词再搜）→ 记笔记 + 存向量。"""
+        self._check_budget(f"第 {idx + 1} 步检索前")
         text = self._search(desc)
         trail = ""
         if text.strip() == "（无相关结果）":
@@ -134,9 +142,15 @@ class DeepResearchAgent:
 
     # ------------------------------------------------------------------ #
     def research(self, question: str, plan=None, resume: bool = False,
-                 max_steps: int = 3) -> dict:
-        """跑一次完整研究。返回报告与全程工件。"""
+                 max_steps: int = 3, max_seconds: float | None = None) -> dict:
+        """跑一次完整研究。返回报告与全程工件。
+
+        max_seconds：整单研究墙钟预算（None = 不限）。在阶段间检查——超时抛
+        TimeoutError，但 checkpoint 已落盘：带着 checkpoint_id 用更大预算续跑即可。
+        注意它拦不住「正在飞行」的单次 LLM 调用，那由 LLM_TIMEOUT 兜底。
+        """
         self.tracer.record("run.start", question=question)   # 14：流程编排自己记生命周期
+        self._deadline = time.monotonic() + max_seconds if max_seconds else None
 
         # 断点续跑（12）：有 checkpoint 就从盘上恢复
         if resume and os.path.exists(self.checkpoint_path):
@@ -156,6 +170,7 @@ class DeepResearchAgent:
         run_plan_with_checkpoint(p, self._research_step, self.checkpoint_path)
 
         # Phase 3：综合 + 写报告
+        self._check_budget("综合前")
         context = self._assemble_context(question)
         report = self._synthesize(question, context)
 

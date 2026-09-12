@@ -3,16 +3,12 @@
 
 -r requirements.txt
 
-# 阶段三起：向量与数值计算（手写最简向量库）
-numpy>=1.26.0
-
-# 阶段三起：文档加载与切分
-pypdf>=4.0.0
-markdown>=3.5
-
-# 阶段六：部署
+# 阶段六：部署（第 18 章服务）
 fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
+# 依赖即承诺：requirements 只放真实 import 的东西。
+# 曾经列过 numpy/pypdf/markdown——教程正文自写了最简向量库（harness/memory.py），
+# 文档加载也没做，列着就是骗人。要加回来，先让代码真的 import 它。
 
 # 可观测（第 14 章可选）
 # langfuse>=2.0.0

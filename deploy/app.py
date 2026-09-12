@@ -114,8 +114,16 @@ def research(req: ResearchRequest) -> ResearchResponse:
     """跑一次深度研究。每请求独立 workdir；要续跑就带上响应里返回的 checkpoint_id。"""
     workdir = _workdir_for(req.checkpoint_id)
     agent = _build_agent(workdir)
-    result = agent.research(req.question, plan=req.plan, max_steps=req.max_steps,
-                            resume=bool(req.checkpoint_id))
+    # 整单墙钟预算：RESEARCH_TIMEOUT 秒（0 = 不限）。超时 504——但进度已落盘，
+    # 客户端带着 checkpoint_id 续跑即可，前面检索过的步骤不重烧
+    _t = os.getenv("RESEARCH_TIMEOUT", "120")
+    max_seconds = float(_t) if float(_t) > 0 else None
+    try:
+        result = agent.research(req.question, plan=req.plan, max_steps=req.max_steps,
+                                resume=bool(req.checkpoint_id), max_seconds=max_seconds)
+    except TimeoutError as e:
+        raise HTTPException(status_code=504,
+                            detail=f"{e}；携带 checkpoint_id 重发可续跑") from e
     m = result["metrics"]
     return ResearchResponse(
         report=result["report"],
