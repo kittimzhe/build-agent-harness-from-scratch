@@ -159,9 +159,9 @@
 
 ---
 
-## ⭐ Star History
+## ⭐ Star
 
-[![Star History Chart](https://api.star-history.com/image?repos=kittimzhe/build-agent-harness-from-scratch&type=date)]()
+[![GitHub stars](https://img.shields.io/github/stars/kittimzhe/build-agent-harness-from-scratch?style=social)](https://github.com/kittimzhe/build-agent-harness-from-scratch)
 
 ---
 

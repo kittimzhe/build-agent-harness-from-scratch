@@ -9,6 +9,23 @@
 3. 提交修改，commit message 遵循：`feat: 新增 xxx` / `fix: 修复 xxx` / `docs: 文档 xxx`
 4. 提交 Pull Request，描述清楚改了什么、为什么
 
+## 本地运行与测试
+
+测试与 05–17 章离线案例**都不需要 API Key**（用确定性替身 / `ScriptedLLM`），新环境三步即可：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install -r requirements.txt pytest        # 只跑单测；跑部署冒烟再加装 requirements-full.txt
+python -m pytest tests/              # 20 条，无需 API Key
+```
+
+- **离线案例**：`python examples/05_tool_loop.py`（05 章起案例默认离线替身；`--real` 才要 Key）
+- **部署冒烟**（无 API）：`DEEP_RESEARCH_OFFLINE=1 python deploy/smoke_test.py`（需 `pip install -r requirements-full.txt`，httpx 由 openai 依赖带入）
+- **真实研究**才需要 `.env`：复制 `.env-example` 填 Key，`python examples/05_tool_loop.py --real` 或跑第 17/18 章真模型路径
+
+> CI（`.github/workflows/ci.yml`）会把「语法检查 → pytest → demos 05–16 → 17 离线 → 18 FastAPI 冒烟」整条跑一遍，全离线、无 Key，提交前可先在本地复现。
+
 ## 内容规范
 
 - **可运行优先**：每章配套代码必须能 `python examples/xx.py` 跑通，不要贴伪代码。
