@@ -70,6 +70,15 @@ def test_fresh_run_context_non_empty(tmp_path):
     assert "未检索到资料" not in result["context"]
 
 
+def test_plan_truncates_to_step_budget(tmp_path):
+    """计划步数超过预算（max_rounds=8）：检索前截断，超出的步骤不烧检索。"""
+    oversized = [f"step{i}" for i in range(12)]      # 12 步 > 预算 8
+    result = _agent(tmp_path / "wd").research("q", plan=oversized)
+    assert len(result["plan"].steps) == 8            # 被砍到 8 步
+    assert all(s.status == "done" for s in result["plan"].steps)   # 截断后照常跑完
+    assert "（报告）" == result["report"]            # 综合阶段正常收尾
+
+
 def test_offline_report_eval(tmp_path):
     """最小评测（eval）：离线报告的三条硬指标。
 
